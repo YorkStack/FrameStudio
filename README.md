@@ -1,14 +1,14 @@
 # FrameStudio
 
-Local image workshop for macOS, built with Tauri, React, TypeScript, Rust and SQLite. German and English interface. Source code under the [MIT license](LICENSE).
+Local image workshop for macOS and Windows, built with Tauri, React, TypeScript, Rust and SQLite. German and English interface. Source code under the [MIT license](LICENSE).
 
 ## Download / Herunterladen
 
-[Latest release: macOS Apple Silicon](https://github.com/YorkStack/FrameStudio/releases/latest)
+[Latest release: macOS Apple Silicon and Windows x64](https://github.com/YorkStack/FrameStudio/releases/latest)
 
-Open the DMG and copy FrameStudio to Applications. No Docker, database server, Node or Rust installation is needed to use the app. This early release is **ad-hoc signed, not Developer ID signed or notarized**. macOS may block downloaded builds; no system security settings need to be disabled. Building the source locally is an alternative. Windows CI is provided; a Windows download will only be offered after a successful Windows build.
+Open the DMG and copy FrameStudio to Applications. No Docker, database server, Node or Rust installation is needed to use the app. This early release is **ad-hoc signed, not Developer ID signed or notarized**. macOS may block downloaded builds; no system security settings need to be disabled. Building the source locally is an alternative. On Windows, run `FrameStudio_0.3.0_x64-setup.exe`. The per-user installer offers English/German and installs WebView2 if needed (internet required). The Windows package is not Authenticode signed. See the [Windows installation and test report](docs/WINDOWS.md).
 
-DMG öffnen und FrameStudio nach „Programme“ kopieren. Die Sprache lässt sich unter **Einstellungen → Darstellung → Sprache** umstellen. Die Vorabversion besitzt noch keine Apple-Notarisierung.
+DMG öffnen und FrameStudio nach „Programme“ kopieren. Die Sprache lässt sich unter **Einstellungen → Darstellung → Sprache** umstellen. Unter Windows die `-setup.exe` ausführen. Die Vorabversion besitzt noch keine Apple-Notarisierung bzw. Windows-Herausgebersignatur.
 
 ## English documentation
 
