@@ -1,0 +1,10 @@
+{
+  "project_id": "PROJEKT-ID-EINSETZEN",
+  "description": "Drei Kapitelbilder für die Werkstatt-Präsentation",
+  "idempotency_key": "werkstatt-kapitel-1-3-v1",
+  "items": [
+    {"description": "Ankunft in der Entwicklerwerkstatt", "provider": "test", "model": "deterministic-v1"},
+    {"description": "Retro-Roboter baut an einer Holzwerkbank", "provider": "test", "model": "deterministic-v1"},
+    {"description": "Gemeinsame Präsentation des fertigen Projekts", "provider": "test", "model": "deterministic-v1"}
+  ]
+}

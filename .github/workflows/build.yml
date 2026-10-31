@@ -1,0 +1,48 @@
+name: Desktop checks
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - run: npm install --global npm@12.2.1
+      - run: npm ci
+      - run: python3 -c "import sys; assert sys.version_info >= (3, 11), 'Python 3.11+ required for SBOM'"
+      - run: npm run build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+      - run: npm audit --audit-level=low
+      - if: runner.os == 'macOS'
+        run: npx playwright install chromium
+      - if: runner.os == 'macOS'
+        run: python3 scripts/acceptance.py --scale
+      - if: runner.os == 'macOS'
+        run: cargo build --manifest-path src-tauri/Cargo.toml --locked --example session_ui_fixture
+      - if: runner.os == 'macOS'
+        run: npm run test:e2e
+      - run: npm run tauri -- build --no-bundle
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: framestudio-${{ matrix.os }}
+          path: |
+            src-tauri/target/release/framestudio
+            src-tauri/target/release/framestudio.exe

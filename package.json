@@ -1,0 +1,29 @@
+{
+  "name": "framestudio",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "python3 scripts/generate-sbom.py && node scripts/check-i18n.mjs && tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "test:e2e": "playwright test",
+    "sbom": "python3 scripts/generate-sbom.py",
+    "check:i18n": "node scripts/check-i18n.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.4",
+    "lucide-react": "1.66.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@tauri-apps/cli": "2.12.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}

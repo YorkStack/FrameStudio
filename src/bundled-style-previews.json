@@ -1,0 +1,167 @@
+[
+  {
+    "style_id": "00000000-0000-4000-8000-000000000001",
+    "style_version": 1,
+    "name": "Comic mit klarer Kontur",
+    "blocks": {
+      "light": "Flaches Licht mit einfachen Schatten",
+      "lines": "Saubere schwarze Konturen, gleichmäßige Strichstärke",
+      "medium": "Digitale Tusche",
+      "palette": "Begrenzte satte Farben",
+      "texture": "Glatte Farbflächen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000001.png",
+    "sha256": "65f76720d41c0862e26593166b490b90d53c5f72ce96ce7234603e7c847df90f"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000002",
+    "style_version": 1,
+    "name": "Ligne claire",
+    "blocks": {
+      "light": "Gleichmäßige Beleuchtung",
+      "lines": "Präzise gleichmäßige Konturen ohne Schraffur",
+      "medium": "Tusche und flache Kolorierung",
+      "palette": "Helle klar getrennte Farben",
+      "texture": "Saubere glatte Flächen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000002.png",
+    "sha256": "ab5b9fc0e9c306609fa2b069b71bb836654654f1acabe39fb302f461329622a2"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000003",
+    "style_version": 1,
+    "name": "Graphic Novel",
+    "blocks": {
+      "light": "Kräftige dramatische Schatten",
+      "lines": "Expressive Konturen und Schraffur",
+      "medium": "Tuscheillustration",
+      "palette": "Entsättigte Farben, tiefe Schwarztöne",
+      "texture": "Leichte Papierstruktur"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000003.png",
+    "sha256": "a037f48a5ea6d6c10d86cd61514b5e6277bd3c66ebd077bdbae486b1f5cfdb12"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000004",
+    "style_version": 1,
+    "name": "Manga/Anime",
+    "blocks": {
+      "light": "Cel-Shading, klar begrenzte Schatten",
+      "lines": "Feine dynamische Linien, klare Silhouetten",
+      "medium": "Digitale Zeichnung",
+      "palette": "Harmonische lebendige Farben",
+      "texture": "Glatte Flächen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000004.png",
+    "sha256": "cb1e92f4124f79f41c599a86fc3becfafd88152af961f07555c9631eebb603a3"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000005",
+    "style_version": 1,
+    "name": "Cartoon für Erklärfilme",
+    "blocks": {
+      "light": "Weiches flaches Licht",
+      "lines": "Runde vereinfachte Formen, konsistente Kontur",
+      "medium": "Vektorähnliche Illustration",
+      "palette": "Freundliche begrenzte Palette",
+      "texture": "Keine feinen Texturen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000005.png",
+    "sha256": "ce3c18e61566fbc96d0070f7fa1731ebcad8f1671ca894602167236a4049e685"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000006",
+    "style_version": 1,
+    "name": "Aquarell",
+    "blocks": {
+      "light": "Helles natürliches Licht",
+      "lines": "Lockere Konturen, weiche Farbübergänge",
+      "medium": "Wasserfarbe auf Papier",
+      "palette": "Transparente lasierende Farben",
+      "texture": "Sichtbare Papierkörnung und Pigmentränder"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000006.png",
+    "sha256": "4f7b0d7449b9c4044b186179022000d5d8355c5921ca02c915d3c100cf4e6feb"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000007",
+    "style_version": 1,
+    "name": "Ölgemälde",
+    "blocks": {
+      "light": "Modellierendes Seitenlicht",
+      "lines": "Malerische Konturen, sichtbare Pinselstriche",
+      "medium": "Ölfarbe auf Leinwand",
+      "palette": "Tiefe warme Pigmentfarben",
+      "texture": "Impasto und Leinwandstruktur"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000007.png",
+    "sha256": "d36254361ad50555c8b0e4717141ed8545542a0ecf40eb8a292f8dcbff027a79"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000008",
+    "style_version": 1,
+    "name": "Fotorealistische Darstellung",
+    "blocks": {
+      "light": "Plausible Beleuchtung und Schatten",
+      "lines": "Natürliche Kanten ohne gezeichnete Konturen",
+      "medium": "Fotografie",
+      "palette": "Naturgetreue Farbtemperatur",
+      "texture": "Realistische Materialoberflächen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000008.png",
+    "sha256": "0068dad6496d329db27c52f349df15a7aff931d7f20a683b40aaa8963ac9d3b7"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000009",
+    "style_version": 1,
+    "name": "Technische Strichzeichnung",
+    "blocks": {
+      "light": "Keine dekorativen Lichteffekte",
+      "lines": "Präzise dünne Linien und definierte Kanten",
+      "medium": "Technische Tuschezeichnung",
+      "palette": "Schwarz auf Weiß",
+      "texture": "Keine Textur, klare Details"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000009.png",
+    "sha256": "da4b50b86bf29c2136baa702bbb38f523aa101a4c34c886b35ef32588ba44d3b"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000010",
+    "style_version": 1,
+    "name": "Isometrische Illustration",
+    "blocks": {
+      "light": "Einheitliche Lichtquelle von links oben",
+      "lines": "Parallele Achsen, konsistente isometrische Perspektive",
+      "medium": "Geometrische Illustration",
+      "palette": "Begrenzte abgestimmte Palette",
+      "texture": "Saubere Flächen"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000010.png",
+    "sha256": "efffcba2869205c3e35cef83c9a56c307b70fcbde1897859d35bdcca7926d463"
+  },
+  {
+    "style_id": "00000000-0000-4000-8000-000000000011",
+    "style_version": 1,
+    "name": "Pixel Art",
+    "blocks": {
+      "light": "Abgestufte Pixel-Schatten",
+      "lines": "Scharfe Pixelkanten ohne Kantenglättung",
+      "medium": "Rasterillustration",
+      "palette": "Kleine festgelegte Farbpalette",
+      "texture": "Bewusst grobes Pixelraster"
+    },
+    "provider": "gemini",
+    "file": "/style-previews/00000000-0000-4000-8000-000000000011.png",
+    "sha256": "df12a9a63aabf4848ffdf1a9501da6c44ba34ac3da20b0f8b57adbbeba4fde72"
+  }
+]
