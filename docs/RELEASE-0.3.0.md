@@ -15,10 +15,16 @@ Validated on 2026-10-31, macOS 27.2, Apple M2 Pro, 16 GiB RAM.
 | npm dependencies | npm audit --audit-level=low | 0 known vulnerabilities at check time |
 | Public source scan | Allowlisted new repository, credential patterns/private identifiers/runtime files/PNG text metadata checked | No findings; personal workspace and old Git history excluded |
 | Live provider requests | Not used for this release validation | No development spending; no fresh provider success claimed |
-| Native release / CI | Recorded below after packaging | Pending final package checks |
+| Native macOS app | Release app on an isolated workspace: single-image entry, real folder picker, DE/EN menus and restart | Passed; English persists after restart; deterministic core image created |
+| Download artifacts | App signature verification, DMG checksum verification and read-only mount, ZIP integrity, per-file hash comparison | Passed; DMG and ZIP contain the same app; binary/source privacy scans have no findings |
+| Windows CI | First execution exposed a Windows console encoding error in the SBOM script | Fixed with UTF-8 file I/O and ASCII console output; Windows rerun pending, no Windows release claimed |
 
 Changes: one direct optional native dependency, tauri-plugin-dialog 2.8.4, provides the OS folder selector. Four lockfile packages were added; the SBOM contains 684 locked components, including development and platform-specific dependencies. No new database table or migration: settings.language is an additive validated JSON field. Existing profiles default to German. Minimal Tauri capability grants and CSP remain unchanged; fixed key-help destinations are a local-only core operation.
 
 Known distribution limits: macOS Apple Silicon is the initial download target. Ad-hoc signing does not provide Apple Developer ID identity or notarization. A newly built binary may need renewed keychain app authorization; session-only keys are available without plaintext persistence. Windows CI is prepared; a prepared workflow is not a Windows test result. Third-party audit exceptions and unmaintained transitive packages are listed in DEPENDENCIES.md.
 
 Tests use synthetic assets, not personal projects. Initial development test failures were corrected and rerun: inaccessible fieldset legends, a case-sensitive label mismatch, and an unintended Vite reload while the separate release tree was written. Build/artifact directories are now excluded from dev-server watching.
+
+Performance sample: the Chromium GUI with the actual Rust CLI and 1,000 synthetic assets rendered 72 gallery cards in 876 ms; the next page took 365 ms. Mean frame interval was 16.67 ms, maximum 16.8 ms; Chromium JS heap was 28.7 MiB. These measurements include the browser test bridge and are not native app startup or total-process memory measurements.
+
+Release artifacts were built from the public source checkout with Rust home-path remapping. The subsequent Windows-only SBOM script correction does not change the macOS app contents. The source and binary scans check credential-shaped values, private project identifiers, personal home paths, runtime databases and image text metadata; they do not constitute a general security certification.
