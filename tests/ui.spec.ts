@@ -1431,3 +1431,21 @@ test("beginner single image: shared core, one image, English persistence and Ger
   await page.screenshot({path:path.join(proof,'52-single-image.png')});
   } finally { beginnerWorker.kill('SIGTERM'); }
 });
+
+
+test("Windows small desktop: settings visible and native shortcut label", async ({page}) => {
+  const store = await fs.mkdtemp(path.resolve('.artifacts/windows-small-ui-'));
+  await page.addInitScript(() => Object.defineProperty(navigator, 'platform', {get: () => 'Win32'}));
+  await page.setViewportSize({width: 1024, height: 668});
+  await routeCore(page, store);
+  await page.goto('/');
+  await expect(page.locator('.new-project')).toContainText('Ctrl+N');
+  const settings = page.locator('.sidebar-settings');
+  await expect(settings).toBeEnabled();
+  await expect(settings).toBeInViewport({ratio: 1});
+  await settings.click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('navigation', {name: 'Einstellungsbereiche'}).getByRole('button', {name: 'API-Schlüssel', exact: true}).click();
+  await expect(page.getByRole('dialog').getByRole('button',{name:'Speichern',exact:true})).toBeInViewport({ratio:1});
+  await page.screenshot({path:path.join(proof,'windows-small-settings.png')});
+});

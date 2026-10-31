@@ -466,7 +466,7 @@ export default function App() {
         <button className="new-project" onClick={() => openEdit("project")}>
           <Plus size={17} />
           {de.newProject}
-          <span aria-hidden="true">⌘N</span>
+          <span aria-hidden="true">{/Mac/.test(navigator.platform) ? "⌘N" : "Ctrl+N"}</span>
         </button>
         <nav className="main-nav" aria-label={t("Bibliotheken")}>
           <button className={quickMode ? "active" : ""} onClick={()=>void openSingleImage()}><Image size={18}/>{de.singleImage}</button>

@@ -138,6 +138,8 @@ h3 {
   flex-direction: column;
   border-right: 1px solid var(--border);
   padding: 33px 17px 16px;
+  min-height: 0;
+  overflow-y: auto;
 }
 .brand {
   display: flex;
@@ -301,6 +303,7 @@ h3 {
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 25px;
+  flex-shrink: 0;
 }
 .local-badge {
   display: flex;
@@ -2460,7 +2463,7 @@ h3 {
 .settings-section .pricing-panel > summary { font-size: 14px; }
 .settings-help { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
 .settings-help summary { font-size: 13px; cursor: pointer; }
-.settings-footer { position: sticky; bottom: -28px; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 0 0; margin-top: 24px; display: flex; gap: 20px; align-items: center; justify-content: space-between; }
+.settings-footer { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 16px 0 0; margin-top: 24px; display: flex; gap: 20px; align-items: center; justify-content: space-between; }
 .settings-footer > div:first-child { flex: 1; min-width: 0; }
 .settings-footer .hint { font-size: 12px; margin: 0; }
 .settings-footer .button-row { flex-shrink: 0; }
@@ -2554,3 +2557,13 @@ h3 {
 .quick-generator .generator-body { display: flex; flex-direction: column; }
 .quick-generator .prompt-section:nth-of-type(3) { order: -1; }
 .quick-generator .prompt-section { border: 0; padding: 0; }
+
+/* Keep Settings reachable on 768px Windows displays after native window chrome. */
+@media (max-height: 800px) {
+  .sidebar { padding-top: 20px; }
+  .brand { padding-bottom: 18px; }
+  .main-nav { margin-top: 16px; margin-bottom: 12px; }
+  .project-list { min-height: 40px; }
+  .sidebar-bottom { padding-top: 12px; }
+  .sidebar-bottom > p { display: none; }
+}

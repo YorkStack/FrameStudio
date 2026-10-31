@@ -314,7 +314,7 @@ const german = {
   loading: "Wird geladen …",
   exportSelection: "Auswahl exportieren",
   allProject: "Ganzes Projekt",
-  savedLocally: "Deine Projekte und Bilder bleiben auf diesem Mac.",
+  savedLocally: "Deine Projekte und Bilder bleiben auf diesem Computer.",
   apiPrivacy:
     "Nur ausdrücklich ausgewählte Inhalte werden zur Generierung an den Provider gesendet.",
   usage: "Verwendung",
