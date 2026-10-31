@@ -76,6 +76,7 @@ fn fit_windows_start_window(app: &tauri::AppHandle) -> tauri::Result<()> {
     let area = monitor.work_area();
     let outer = window.outer_size()?;
     let inner = window.inner_size()?;
+    let position = window.outer_position()?;
     let scale = monitor.scale_factor();
     let margin = (8.0 * scale).ceil() as u32;
     let available_width = area
@@ -94,7 +95,13 @@ fn fit_windows_start_window(app: &tauri::AppHandle) -> tauri::Result<()> {
         ((1000.0 * scale) as u32).min(available_width),
         ((650.0 * scale) as u32).min(available_height),
     )))?;
-    if outer.width > area.size.width || outer.height > area.size.height {
+    if position.x < area.position.x
+        || position.y < area.position.y
+        || i64::from(position.x) + i64::from(outer.width)
+            > i64::from(area.position.x) + i64::from(area.size.width)
+        || i64::from(position.y) + i64::from(outer.height)
+            > i64::from(area.position.y) + i64::from(area.size.height)
+    {
         window.set_size(PhysicalSize::new(
             inner.width.min(available_width),
             inner.height.min(available_height),
