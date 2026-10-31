@@ -10,6 +10,13 @@ Open the DMG and copy FrameStudio to Applications. No Docker, database server, N
 
 DMG öffnen und FrameStudio nach „Programme“ kopieren. Die Sprache lässt sich unter **Einstellungen → Darstellung → Sprache** umstellen. Die Vorabversion besitzt noch keine Apple-Notarisierung.
 
+## English documentation
+
+- [Quickstart with screenshots](docs/QUICKSTART.md) — connect a provider, create an image and export it.
+- [User Guide](docs/USER-GUIDE.md) — projects, prompt sections, characters, whole-series export, budgets, workspace changes and access tokens.
+
+[Download both guides for offline reading](https://github.com/YorkStack/FrameStudio/releases/download/v0.3.0/FrameStudio-0.3.0-English-Guides.zip) — HTML with screenshots; unzip and open `QUICKSTART.html`.
+
 ## First image / Erstes Bild
 
 1. Open **Settings → API keys**. Select Gemini or OpenAI. The help section links to the provider's key creation page.
