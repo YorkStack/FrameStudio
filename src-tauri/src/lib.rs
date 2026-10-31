@@ -134,7 +134,11 @@ fn native_menu(app: &tauri::AppHandle, english: bool) -> tauri::Result<()> {
         .item(&Item::about(
             app,
             Some(text("Über FrameStudio", "About FrameStudio")),
-            None,
+            Some(tauri::menu::AboutMetadata {
+                name: Some("FrameStudio".into()),
+                version: Some(env!("CARGO_PKG_VERSION").into()),
+                ..Default::default()
+            }),
         )?)
         .separator()
         .item(&Item::quit(app, Some(text("Beenden", "Quit")))?)
