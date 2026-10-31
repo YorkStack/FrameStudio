@@ -63,7 +63,7 @@ pub fn desktop(bridge: transport::Bridge) -> anyhow::Result<()> {
 }
 
 // Native menu labels follow the same saved language as the webview.
-#[cfg(feature = "desktop")]
+#[cfg(all(feature = "desktop", target_os = "macos"))]
 fn native_menu(app: &tauri::AppHandle, english: bool) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, PredefinedMenuItem as Item, SubmenuBuilder};
     let text = |de, en| if english { en } else { de };
@@ -111,6 +111,46 @@ fn native_menu(app: &tauri::AppHandle, english: bool) -> tauri::Result<()> {
             app,
             Some(text("Vollbild", "Enter Full Screen")),
         )?)
+        .item(&Item::close_window(
+            app,
+            Some(text("Fenster schließen", "Close Window")),
+        )?)
+        .build()?;
+    app.set_menu(
+        MenuBuilder::new(app)
+            .items(&[&application, &edit, &window])
+            .build()?,
+    )?;
+    Ok(())
+}
+
+// Windows uses only menu commands implemented by its native menu backend.
+// In particular, do not offer macOS-only Show All, Hide Others or Full Screen.
+#[cfg(all(feature = "desktop", not(target_os = "macos")))]
+fn native_menu(app: &tauri::AppHandle, english: bool) -> tauri::Result<()> {
+    use tauri::menu::{MenuBuilder, PredefinedMenuItem as Item, SubmenuBuilder};
+    let text = |de, en| if english { en } else { de };
+    let application = SubmenuBuilder::new(app, "FrameStudio")
+        .item(&Item::about(
+            app,
+            Some(text("Über FrameStudio", "About FrameStudio")),
+            None,
+        )?)
+        .separator()
+        .item(&Item::quit(app, Some(text("Beenden", "Quit")))?)
+        .build()?;
+    let edit = SubmenuBuilder::new(app, text("Bearbeiten", "Edit"))
+        .item(&Item::cut(app, Some(text("Ausschneiden", "Cut")))?)
+        .item(&Item::copy(app, Some(text("Kopieren", "Copy")))?)
+        .item(&Item::paste(app, Some(text("Einfügen", "Paste")))?)
+        .item(&Item::select_all(
+            app,
+            Some(text("Alles auswählen", "Select All")),
+        )?)
+        .build()?;
+    let window = SubmenuBuilder::new(app, text("Fenster", "Window"))
+        .item(&Item::minimize(app, Some(text("Minimieren", "Minimize")))?)
+        .item(&Item::maximize(app, Some(text("Maximieren", "Maximize")))?)
         .item(&Item::close_window(
             app,
             Some(text("Fenster schließen", "Close Window")),
