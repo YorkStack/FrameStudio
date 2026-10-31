@@ -1,0 +1,96 @@
+name: Windows installer
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - run: npm install --global npm@12.2.1
+      - run: npm ci
+      - run: npm run build
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features
+      - name: Windows credential store roundtrip (synthetic credentials only)
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features native_keychain_roundtrip -- --ignored --exact secrets::tests::native_keychain_roundtrip
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+      - run: npm audit --audit-level=low
+      - name: Build x64 NSIS installer
+        run: npm run tauri -- build --bundles nsis -- --locked
+      - name: Install and check release executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force .artifacts | Out-Null
+          $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (!$installer) { throw 'Installer missing' }
+          $installDir = Join-Path $env:RUNNER_TEMP 'FrameStudio-install'
+          $setup = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -PassThru
+          if (!$setup.WaitForExit(180000)) { $setup.Kill(); throw 'Installer timed out' }
+          if ($setup.ExitCode -ne 0) { throw "Installer exit code: $($setup.ExitCode)" }
+          $exe = Join-Path $installDir 'framestudio.exe'
+          if (!(Test-Path $exe)) { throw 'Installed executable missing' }
+          "FRAMESTUDIO_TEST_BINARY=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $version = (Get-Item $exe).VersionInfo.ProductVersion
+          "Installed FrameStudio $version" | Tee-Object .artifacts/windows-install.txt
+          Get-FileHash $exe -Algorithm SHA256 | Format-List | Out-String | Add-Content .artifacts/windows-install.txt
+      - name: Installed app REST, generation, restart and export acceptance
+        run: python3 scripts/acceptance.py
+      - name: Native desktop startup smoke test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dataDir = Join-Path $env:RUNNER_TEMP 'FrameStudio-desktop-smoke'
+          $app = Start-Process -FilePath $env:FRAMESTUDIO_TEST_BINARY -ArgumentList @('--data-dir', $dataDir) -PassThru
+          try {
+            $found = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              Start-Sleep -Seconds 1
+              $app.Refresh()
+              if ($app.HasExited) { throw "Desktop exited early: $($app.ExitCode)" }
+              if ($app.MainWindowHandle -ne 0 -and $app.MainWindowTitle -eq 'FrameStudio') { $found = $true; break }
+            }
+            if (!$found) { throw 'FrameStudio window did not appear' }
+            Start-Sleep -Seconds 10
+            $app.Refresh()
+            if ($app.HasExited -or !$app.Responding) { throw 'Desktop is not responding' }
+            "Native window visible and responding: $($app.MainWindowTitle). No paid requests." | Set-Content .artifacts/windows-desktop.txt
+            Add-Type -AssemblyName System.Windows.Forms
+            Add-Type -AssemblyName System.Drawing
+            $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+            try {
+              $graphics.CopyFromScreen($bounds.Location, [System.Drawing.Point]::Empty, $bounds.Size)
+              $bitmap.Save((Join-Path $pwd '.artifacts/windows-desktop.png'))
+            } finally { $graphics.Dispose(); $bitmap.Dispose() }
+          } finally {
+            if (!$app.HasExited) {
+              $null = $app.CloseMainWindow()
+              if (!$app.WaitForExit(10000)) { $app.Kill() }
+            }
+          }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: FrameStudio-windows-x64
+          if-no-files-found: error
+          path: |
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+            src-tauri/resources/sbom.json
+            .artifacts/acceptance-report.json
+            .artifacts/windows-install.txt
+            .artifacts/windows-desktop.txt
+            .artifacts/windows-desktop.png

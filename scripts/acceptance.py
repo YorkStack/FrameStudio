@@ -2,13 +2,13 @@
 """End-to-end local acceptance. Only deterministic-v1. Creates a fresh private test store."""
 import base64, json, os, pathlib, struct, subprocess, sys, tempfile, time, urllib.request, zlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = ROOT / 'src-tauri/target/debug/framestudio'
+BINARY = pathlib.Path(os.environ.get('FRAMESTUDIO_TEST_BINARY', ROOT / ('src-tauri/target/debug/framestudio.exe' if os.name == 'nt' else 'src-tauri/target/debug/framestudio'))).resolve()
 (ROOT / '.artifacts').mkdir(exist_ok=True)
 STORE = pathlib.Path(tempfile.mkdtemp(prefix='acceptance-', dir=ROOT / '.artifacts'))
 REPORT = {'data_dir': str(STORE), 'provider': 'test', 'paid_requests': 0, 'steps': [], 'metrics': {}}
 
 def local(op, args):
-    p = subprocess.run([str(BINARY), '--data-dir', str(STORE), '--rpc'], input=json.dumps({'op':op,'args':args}), text=True, capture_output=True, check=True)
+    p = subprocess.run([str(BINARY), '--data-dir', str(STORE), '--rpc'], input=json.dumps({'op':op,'args':args}), text=True, encoding='utf-8', capture_output=True, check=True)
     return json.loads(p.stdout)
 local('settings.save', {'rest_enabled':True, 'mcp_enabled':True})
 token = local('tokens.create', {})['token']
@@ -78,7 +78,8 @@ try:
         REPORT['metrics']['gallery_page_ms_max']=round(max(timings),2)
         REPORT['scale_project']=scale['id'];step('1000 echte synthetische Importassets und 20 Galerieseiten geprüft')
     REPORT['costs']=call('cost.project',{'project_id':pid})
-    REPORT['metrics']['server_rss_kib']=subprocess.check_output(['ps','-o','rss=','-p',str(server.pid)],text=True).strip()
+    if os.name != 'nt':
+        REPORT['metrics']['server_rss_kib']=subprocess.check_output(['ps','-o','rss=','-p',str(server.pid)],text=True).strip()
     REPORT['status']='passed'
 finally:
     stop()

@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
-    fs::{self, File, OpenOptions},
+    fs::{self, OpenOptions},
     io::{Cursor, Write},
     path::{Component, Path, PathBuf},
     time::Duration,
@@ -1982,7 +1982,7 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         fs::hard_link(&temp, path)?;
         fs::remove_file(&temp)?;
         #[cfg(unix)]
-        File::open(parent)?.sync_all()?;
+        fs::File::open(parent)?.sync_all()?;
         Ok(())
     })();
     if result.is_err() {
@@ -1990,11 +1990,11 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     }
     result
 }
-fn private_dir(path: &Path) -> Result<()> {
+fn private_dir(_path: &Path) -> Result<()> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700))?;
+        fs::set_permissions(_path, fs::Permissions::from_mode(0o700))?;
     }
     Ok(())
 }
