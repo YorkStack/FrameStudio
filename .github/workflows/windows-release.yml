@@ -79,6 +79,21 @@ jobs:
             "Native window visible and responding: $($app.MainWindowTitle). No paid requests." | Set-Content .artifacts/windows-desktop.txt
             Add-Type -AssemblyName System.Windows.Forms
             Add-Type -AssemblyName System.Drawing
+            Add-Type @'
+          using System;
+          using System.Runtime.InteropServices;
+          public static class DesktopBounds {
+            [StructLayout(LayoutKind.Sequential)]
+            public struct RECT { public int Left, Top, Right, Bottom; }
+            [DllImport("user32.dll")]
+            public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
+          }
+          '@
+            $rect = New-Object DesktopBounds+RECT
+            if (![DesktopBounds]::GetWindowRect($app.MainWindowHandle, [ref]$rect)) { throw 'Cannot inspect native window bounds' }
+            $work = [System.Windows.Forms.Screen]::FromHandle($app.MainWindowHandle).WorkingArea
+            if ($rect.Left -lt $work.Left -or $rect.Top -lt $work.Top -or $rect.Right -gt $work.Right -or $rect.Bottom -gt $work.Bottom) { throw 'Native window extends beyond usable screen area' }
+            'Native window fits monitor working area including taskbar and decorations.' | Add-Content .artifacts/windows-desktop.txt
             $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
             $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
             $graphics = [System.Drawing.Graphics]::FromImage($bitmap)

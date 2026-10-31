@@ -18,5 +18,17 @@
         "displayLanguageSelector": true
       }
     }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FrameStudio",
+        "width": 1440,
+        "height": 980,
+        "minWidth": 1000,
+        "minHeight": 650,
+        "backgroundColor": "#f6f4ef"
+      }
+    ]
   }
 }

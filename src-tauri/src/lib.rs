@@ -53,12 +53,57 @@ pub fn desktop(bridge: transport::Bridge) -> anyhow::Result<()> {
         .manage(bridge)
         .setup(move |app| {
             native_menu(app.handle(), english)?;
+            #[cfg(target_os = "windows")]
+            fit_windows_start_window(app.handle())?;
             tauri::async_runtime::spawn(transport::worker(worker));
             tauri::async_runtime::spawn(transport::monitor_http(http));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![rpc, choose_directory])
         .run(tauri::generate_context!())?;
+    Ok(())
+}
+
+#[cfg(all(feature = "desktop", target_os = "windows"))]
+fn fit_windows_start_window(app: &tauri::AppHandle) -> tauri::Result<()> {
+    use tauri::{Manager, PhysicalPosition, PhysicalSize};
+    let Some(window) = app.get_webview_window("main") else {
+        return Ok(());
+    };
+    let Some(monitor) = window.current_monitor()? else {
+        return Ok(());
+    };
+    let area = monitor.work_area();
+    let outer = window.outer_size()?;
+    let inner = window.inner_size()?;
+    let scale = monitor.scale_factor();
+    let margin = (8.0 * scale).ceil() as u32;
+    let available_width = area
+        .size
+        .width
+        .saturating_sub(outer.width.saturating_sub(inner.width))
+        .saturating_sub(margin * 2)
+        .max(1);
+    let available_height = area
+        .size
+        .height
+        .saturating_sub(outer.height.saturating_sub(inner.height))
+        .saturating_sub(margin * 2)
+        .max(1);
+    window.set_min_size(Some(PhysicalSize::new(
+        ((1000.0 * scale) as u32).min(available_width),
+        ((650.0 * scale) as u32).min(available_height),
+    )))?;
+    if outer.width > area.size.width || outer.height > area.size.height {
+        window.set_size(PhysicalSize::new(
+            inner.width.min(available_width),
+            inner.height.min(available_height),
+        ))?;
+        window.set_position(PhysicalPosition::new(
+            area.position.x + margin as i32,
+            area.position.y + margin as i32,
+        ))?;
+    }
     Ok(())
 }
 
