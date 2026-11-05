@@ -41,7 +41,7 @@ rmcp = {version = "=3.8.0", features = ["transport-io", "client", "transport-chi
 directories = "=6.0.0"
 subtle = "=2.6.1"
 scraper = { version = "=0.29.0", default-features = false }
-zip = {version = "=9.2.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+zip = {version = "=9.2.2", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 ttf-parser = "=0.25.1"
 lopdf = {version = "=0.46.0", default-features = false}
 tauri-plugin-dialog = { version = "=2.8.4", optional = true }
