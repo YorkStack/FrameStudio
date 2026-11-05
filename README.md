@@ -1,70 +1,83 @@
 # FrameStudio
 
-Local image workshop for macOS and Windows, built with Tauri, React, TypeScript, Rust and SQLite. German and English interface. Source code under the [MIT license](LICENSE).
+[![Desktop checks](https://github.com/YorkStack/FrameStudio/actions/workflows/build.yml/badge.svg)](https://github.com/YorkStack/FrameStudio/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/YorkStack/FrameStudio)](https://github.com/YorkStack/FrameStudio/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-## Download / Herunterladen
+A local image workshop for macOS and Windows. Create images with Google Gemini or OpenAI using your own API key, organize them in projects with reusable scenes and characters, and export them as PNG, PDF, PowerPoint, sprite sheets and more. Your projects stay on your computer.
 
-[Latest release: macOS Apple Silicon and Windows x64](https://github.com/YorkStack/FrameStudio/releases/latest)
+**Documentation:** English (below) · **[Deutsche Dokumentation](docs/de/README.md)**
 
-Open the DMG and copy FrameStudio to Applications. No Docker, database server, Node or Rust installation is needed to use the app. This early release is **ad-hoc signed, not Developer ID signed or notarized**. macOS may block downloaded builds; no system security settings need to be disabled. Building the source locally is an alternative. On Windows, run `FrameStudio_0.3.0_x64-setup.exe`. The per-user installer offers English/German and installs WebView2 if needed (internet required). The Windows package is not Authenticode signed. See the [Windows installation and test report](docs/WINDOWS.md).
+![FrameStudio project workspace with gallery, image preview and generator](docs/images/01-workspace.png)
 
-DMG öffnen und FrameStudio nach „Programme“ kopieren. Die Sprache lässt sich unter **Einstellungen → Darstellung → Sprache** umstellen. Unter Windows die `-setup.exe` ausführen. Die Vorabversion besitzt noch keine Apple-Notarisierung bzw. Windows-Herausgebersignatur.
+## Install
 
-## English documentation
+Download the latest version from the **[release page](https://github.com/YorkStack/FrameStudio/releases/latest)**. No Docker, database server, Node or Rust installation is needed.
 
-- [Quickstart with screenshots](docs/QUICKSTART.md) — connect a provider, create an image and export it.
-- [User Guide](docs/USER-GUIDE.md) — projects, prompt sections, characters, whole-series export, budgets, workspace changes and access tokens.
+### macOS (Apple Silicon)
 
-[Download both guides for offline reading](https://github.com/YorkStack/FrameStudio/releases/download/v0.3.0/FrameStudio-0.3.0-English-Guides.zip) — HTML with screenshots; unzip and open `QUICKSTART.html`.
+1. Open `FrameStudio_<version>_aarch64.dmg` and drag **FrameStudio** to **Applications**.
+2. Start FrameStudio. Because this early release is ad-hoc signed and not notarized, macOS may say it cannot verify the app.
+3. In that case open **System Settings → Privacy & Security**, scroll to the message about FrameStudio and click **Open Anyway**. You only need to do this once per version. Do not disable Gatekeeper or other system protections.
 
-## First image / Erstes Bild
+### Windows (x64)
 
-1. Open **Settings → API keys**. Select Gemini or OpenAI. The help section links to the provider's key creation page.
-2. Explicitly save the key in the OS credential store, or activate it only for the current app session. The status distinguishes presence from verified local read access. Never paste a key into an issue or chat.
-3. Choose **Create single image / Einzelbild erzeugen** in the sidebar. Enter a description, choose a style and optional reference image, review the estimate, then generate. Results are retained in the **Single images / Einzelbilder** project.
-4. Use **Projects** for reusable scene, character and instruction blocks, image comparisons and character series. A series approval shows its source, exact image list and total estimate.
-5. Export a selection or complete series as originals, PNG, JPEG, WebP, TIFF, offline HTML, PDF, PPTX, sprite sheet or project ZIP.
+1. Run `FrameStudio_<version>_x64-setup.exe`. The per-user installer offers English or German and installs WebView2 if needed (internet required).
+2. The installer is not Authenticode-signed yet, so Windows SmartScreen may warn you. Choose **More info → Run anyway** if you trust the download. Managed company PCs may block unsigned installers; ask your administrator.
 
-Gemini and OpenAI generate images. Anthropic Claude is an optional **text prompt assistant**, not an image generator. A clearly labeled deterministic test provider works without keys or paid requests. Model catalogs, supported formats and dated pricing sources are documented in [provider verification](docs/PROVIDER-VERIFICATION.md).
+Details: [Windows installation and test report](docs/WINDOWS.md). Checksums are attached to each release (`SHA256SUMS`).
 
-The release contains neutral style thumbnails, editable style templates and application resources. It contains **no developer API keys, access tokens, personal photos, user projects, generation history or project prompts**. User-created content stays in the chosen local workspace. Image generation sends only the selected prompt and references to the selected provider.
+## Your first image
 
-## Settings and local data
+1. Open **Settings → API keys**, choose Google Gemini or OpenAI and use **Open API key page** to create a key at the provider.
+2. Paste the key and click **Save key securely** (stored in the macOS Keychain or Windows Credential Manager) or **Use for this session** (memory only).
+3. Click **Create single image** in the sidebar, describe the image, review the cost estimate and generate.
+4. Select the result in the gallery and click **Export selection**.
 
-- **Appearance:** German/English, light/dark/system and simple/expert mode. User-written descriptions, saved historical prompts and provider-supplied details keep their original language.
-- **Storage & export:** choose an empty directory or an existing FrameStudio workspace. The switch takes effect at the next app start. It does not move or delete the previous workspace; use project ZIP backup/restore to transfer projects.
-- **REST, MCP & access:** active credentials are shown first; revoked grants are retained in a compact history. Active grants can be revoked individually. Provider API keys are separate from these local access tokens.
-- **About & SBOM:** export the CycloneDX 1.6 dependency inventory. It describes the lockfiles, including build and cross-platform packages, not a binary vulnerability assessment.
+The illustrated **[Quickstart](docs/QUICKSTART.md)** walks through these steps with screenshots. The language can be changed under **Settings → Appearance → Language**.
 
-Default data locations follow the OS application-data convention. macOS: `~/Library/Application Support/com.YorkStack.FrameStudio`. The workspace contains SQLite, original files, thumbnails and exports. Keys use the OS credential store or process memory only; no plaintext fallback. macOS app rebuilds can invalidate keychain authorization; see [keychain guidance](docs/KEYCHAIN.md).
+## What FrameStudio does
 
-Costs are shown in USD. Estimates, usage-derived amounts, provider-confirmed amounts and unknown costs are distinct. Local limits are not a global provider billing cap. No automatic paid retry after an uncertain result.
+- **Image providers:** Google Gemini and OpenAI image models. A clearly labeled test provider works without keys or costs.
+- **Prompt assistant (optional):** Anthropic Claude improves prompt text. It does not generate images.
+- **Projects:** reusable scene, character and instruction blocks, style library, character sets and image comparisons.
+- **Costs under control:** estimates before every start, local budgets and limits, no automatic paid retries. Costs are shown in USD; estimates, calculated and unknown costs are kept apart.
+- **Exports:** originals, PNG, JPEG, WebP, TIFF, offline HTML gallery, PDF, PPTX, sprite sheet and project ZIP backup.
+- **Automation (optional):** local REST and MCP interfaces with revocable access tokens, off by default.
 
-## REST and MCP
+## Privacy and keys
 
-Both use the same Rust application core and budgets as the GUI. Interfaces are off by default. REST binds to loopback with bearer tokens and restrictive Host/Origin checks. MCP uses the official Rust SDK over stdio and scoped, revocable tokens.
+- API keys are stored only in the OS credential store or in process memory, never in plain text, project files or exports.
+- Projects, images and job history stay in your local workspace (macOS: `~/Library/Application Support/com.YorkStack.FrameStudio`).
+- Generating an image sends only the selected prompt and references to the selected provider.
+- The download contains no developer keys, tokens, personal photos or user projects.
 
-See [API setup and executable examples](docs/API.md), [operation contracts](docs/CONTRACT.md) and [OpenAPI](docs/openapi.json). A hosted model cannot access localhost by itself; a local agent must operate the MCP client.
+Never paste a key into an issue, chat or screenshot. To report a security problem, see [SECURITY.md](SECURITY.md).
 
-## Build and checks
+## Documentation
 
-Pinned versions: Node 24.22.1, npm 12.2.1 and Rust 1.98.1. Python 3.11+ is used only to build the SBOM. macOS builds require Xcode Command Line Tools; Windows builds require MSVC tools and WebView2.
+| For users | For developers and integrators |
+|---|---|
+| [Quickstart](docs/QUICKSTART.md) — first image in six steps | [REST and MCP](docs/API.md) — setup and examples |
+| [User Guide](docs/USER-GUIDE.md) — projects, characters, series, exports, troubleshooting | [Operation contract](docs/CONTRACT.md) and [OpenAPI](docs/openapi.json) |
+| [Windows](docs/WINDOWS.md) — installation and platform notes | [Architecture and security model](docs/ARCHITECTURE.md) · [Security design](docs/SECURITY-DESIGN.md) |
+| [macOS Keychain troubleshooting](docs/KEYCHAIN.md) | [Exports and project packages](docs/EXPORTS.md) |
+| | [Provider verification and pricing](docs/PROVIDER-VERIFICATION.md) · [Dependencies](docs/DEPENDENCIES.md) |
+
+All documents are also available in German in [docs/de/](docs/de/README.md). The Quickstart and User Guide can be [downloaded for offline reading](https://github.com/YorkStack/FrameStudio/releases/download/v0.3.0/FrameStudio-0.3.0-English-Guides.zip) (HTML with screenshots).
+
+## Build from source
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the pinned toolchain, build, tests and release process. In short:
 
 ```sh
 npm ci
 npm run build
-cargo test --manifest-path src-tauri/Cargo.toml --locked
-cargo build --manifest-path src-tauri/Cargo.toml --locked --example session_ui_fixture
-npx playwright install chromium
-npm run test:e2e
 npm run tauri -- build
 ```
 
-macOS artifacts appear in `src-tauri/target/release/bundle/`. On Windows use `npm run tauri -- build --bundles nsis`. Lockfiles pin dependencies; binary hashes may differ between build environments and signing identities.
+Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
-For public builds, remove local paths from compiler diagnostics:
-```sh
-RUSTFLAGS="--remap-path-prefix=$HOME=/build" npm run tauri -- build --ci
-```
+## License
 
-See [architecture](docs/ARCHITECTURE.md), [security](docs/SECURITY.md), [dependencies](docs/DEPENDENCIES.md) and [release validation](docs/RELEASE-0.3.0.md). Existing third-party licenses remain in force; bundled notices and the Noto Sans OFL license are in `src-tauri/resources/`.
+Source code under the [MIT license](LICENSE). Third-party licenses remain in force; bundled notices and the Noto Sans OFL license are in `src-tauri/resources/`. The CycloneDX SBOM can be exported under **Settings → About FrameStudio & SBOM**.

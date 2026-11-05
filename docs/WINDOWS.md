@@ -1,5 +1,7 @@
 # Windows x64 build and installation
 
+*Deutsch: [de/WINDOWS.md](de/WINDOWS.md)*
+
 FrameStudio uses the same Rust core and React interface on Windows and macOS.
 The Windows package is an NSIS installer for Intel/AMD 64-bit Windows. ARM64-native and 32-bit packages are not included.
 
@@ -7,7 +9,7 @@ The Windows package is an NSIS installer for Intel/AMD 64-bit Windows. ARM64-nat
 
 Download the Windows `-setup.exe` from the GitHub release, run it, and choose English or German. Installation is per-user and normally needs no administrator rights. If Microsoft WebView2 is missing, the installer downloads and installs it; an internet connection is required for that step. No Node.js, Rust, Python, Docker or database server is needed to use FrameStudio.
 
-This early Windows package has no Authenticode publisher signature. Windows or an organization's security policy may block it. Do not disable system protections; managed installations should be reviewed by the administrator.
+This early Windows package has no Authenticode publisher signature, so Windows SmartScreen may show a warning. Choose **More info → Run anyway** if you trust the download (compare it with `WINDOWS-SHA256SUMS` from the release). An organization's security policy may block it entirely. Do not disable system protections; managed installations should be reviewed by the administrator.
 
 Open **Settings → API keys** and add your own provider key. Persistent keys use the Windows credential store. Session keys exist only in the running process. The macOS Keychain is not used on Windows. Select a local workspace in **Settings → Storage & export**; its contents are not moved automatically when switching folders.
 
@@ -15,7 +17,7 @@ The English [Quickstart](QUICKSTART.md) and [User Guide](USER-GUIDE.md) also des
 
 ## Reproduce the build
 
-On Windows, install the pinned Node/npm/Rust versions listed in the README, Python 3.11 or later, and the Visual Studio C++ build tools and Windows SDK required by Tauri. Then run:
+On Windows, install the pinned Node/npm/Rust versions listed in [CONTRIBUTING.md](../CONTRIBUTING.md), Python 3.11 or later, and the Visual Studio C++ build tools and Windows SDK required by Tauri. Then run:
 
 ```powershell
 npm ci

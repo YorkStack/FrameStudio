@@ -1,70 +1,76 @@
-# FrameStudio internal contract (v1)
-One Rust crate `framestudio` under src-tauri; optional feature `desktop`. Main owns Cargo.toml, lib.rs, main.rs, Tauri config, transport.rs, secrets.rs and packaging.
-Core agent owns core.rs, provider.rs and core integration tests. Exports agent owns exports.rs and export tests. UI agent owns src/, index.html, frontend tests. Main owns package.json and tooling.
+# FrameStudio operation contract (v1)
+
+*Deutsch: [de/CONTRACT.md](de/CONTRACT.md)*
+
+One Rust crate `framestudio` under `src-tauri`, with the optional feature `desktop`. The same operations serve GUI, REST and MCP; see [API.md](API.md) for transport details and [openapi.json](openapi.json) for the machine-readable schema.
 
 ## Core Rust boundary
-`pub struct Core` is Clone + Send + Sync, holds root PathBuf. `pub fn open(root: PathBuf) -> anyhow::Result<Self>` migrates DB. `pub async fn call(&self, op: &str, args: serde_json::Value, automated: bool) -> anyhow::Result<Value>` dispatches all methods. `pub async fn work_once(&self) -> Result<bool>` atomically claims one job, process lock prevents multiple workers. Main runs worker loop. `pub fn root(&self) -> &Path`. Core checks automated spend approval, durable budgets/idempotency.
-All JSON snake_case. Objects use string UUID `id`. Money integer `*_microusd`; null means unknown. Calls return records directly or arrays (list calls). Errors are German human readable.
 
-## Operations and payload
-- state {} -> {projects,styles,characters,settings,models,assistant_models,pricing_revision,key_status,data_dir}; key_status boolean/status only.
-- project.save {id?,name,description,style_id?,aspect_ratio?,preferences?,archived?,budget_microusd?}; project.duplicate {id}; project.list {}
-- style.save {id?,name,blocks:{medium,lines,palette,light,texture},preview_prompt?} -> versioned style; style.list {}; style.duplicate {id}
-- character.save {id?,project_id,name,description,features,clothing,colors,binding:[],reference_ids:[],approved:bool}; character.list {project_id?}
-- asset.import {project_id,name,description?,data_base64} validates bytes, no arbitrary paths; asset.list {project_id,query?,character_id?,style_id?,favorite?,status?,date?,offset?,limit?} -> {items,total}; asset.update {id,description?,tags?:[],favorite?,comment?,status?}; asset.read {id,thumbnail?:bool} -> {mime,data_base64}; asset.reveal {id} main desktop only
-- prompt.preview / cost.estimate / job.submit: {project_id,description,style_id?,character_id?,reference_ids:[],parent_id?,provider:'test'|'gemini'|'openai',model,aspect_ratio:'1:1',resolution:'1K',quality?:'low'|'medium'|'high'|'xhigh'|'max',count:1,blocks:{goal,scene,character,view,pose,expression,gaze,mouth,composition,output,avoid},variants?:[{pose,expression,view,mouth}],idempotency_key,unknown_price_approved?:bool}. preview -> {prompt}; estimate -> {per_image_microusd,total_microusd,currency:'USD',price_version,warnings:[]}; submit -> {jobs:[records]}. Max 32 explicit variants; max count 8. Each job one request/image. No hidden cartesian product.
-- job.list {project_id?} -> []; job.get {id}; job.cancel {id}; cost.project {project_id} -> {calculated_microusd,estimated_microusd,reserved_microusd,unknown_count,currency}
-- settings.save {theme:'system'|'light'|'dark',mode:'simple'|'expert',export_dir?,naming_template?,job_limit_microusd?,project_limit_microusd?,warning_microusd?,concurrency:1,automation_approved:bool,rest_enabled:bool,mcp_enabled:bool}; secret.set {provider?:'gemini'|'openai'|'anthropic',key}; secret.delete {provider?:'gemini'|'openai'|'anthropic'}; tokens.create {name?,recipient?,purpose?,scope?:rest|mcp|both} -> {token,access,notice} once; tokens.list {}; tokens.update {id,name?,recipient?,purpose?}; tokens.revoke {id?} (main transport handles secrets/tokens)
-- export.create {project_id,asset_ids:[],format:'original'|'png'|'jpeg'|'webp'|'tiff'|'html'|'pdf'|'pptx'|'zip'|'sprite',title?,description?,include_metadata:false,width?,height?,fit:'contain'|'cover'|'fill'|'preserve',background:'#ffffff',layout:'single'|'contact',cell_width?,cell_height?,columns?,padding?,naming_template?} -> {id,path,files:[],...}; export.read {id} -> {mime,data_base64}; project.restore {data_base64} -> project
+`pub struct Core` is Clone + Send + Sync and holds the root `PathBuf`. `pub fn open(root: PathBuf) -> anyhow::Result<Self>` migrates the database. `pub async fn call(&self, op: &str, args: serde_json::Value, automated: bool) -> anyhow::Result<Value>` dispatches all methods. `pub async fn work_once(&self) -> Result<bool>` atomically claims one job; a process lock prevents multiple workers. `main` runs the worker loop. `pub fn root(&self) -> &Path`. The core checks automated spending approval, durable budgets and idempotency.
+
+All JSON is snake_case. Objects use a string UUID `id`. Money is an integer `*_microusd`; `null` means unknown. Calls return records directly or arrays (list calls). Error messages are human-readable and currently in German.
+
+## Operations and payloads
+
+- `state {}` → `{projects,styles,characters,settings,models,assistant_models,pricing_revision,key_status,data_dir}`; `key_status` contains booleans/status only.
+- `project.save {id?,name,description,style_id?,aspect_ratio?,preferences?,archived?,budget_microusd?}`; `project.duplicate {id}`; `project.list {}`
+- `style.save {id?,name,blocks:{medium,lines,palette,light,texture},preview_prompt?}` → versioned style; `style.list {}`; `style.duplicate {id}`
+- `character.save {id?,project_id,name,description,features,clothing,colors,binding:[],reference_ids:[],approved:bool}`; `character.list {project_id?}`
+- `asset.import {project_id,name,description?,data_base64}` validates bytes, no arbitrary paths; `asset.list {project_id,query?,character_id?,style_id?,favorite?,status?,date?,offset?,limit?}` → `{items,total}`; `asset.update {id,description?,tags?:[],favorite?,comment?,status?}`; `asset.read {id,thumbnail?:bool}` → `{mime,data_base64}`; `asset.reveal {id}` (desktop only)
+- `prompt.preview` / `cost.estimate` / `job.submit`: `{project_id,description,style_id?,character_id?,reference_ids:[],parent_id?,provider:'test'|'gemini'|'openai',model,aspect_ratio:'1:1',resolution:'1K',quality?:'low'|'medium'|'high'|'xhigh'|'max',count:1,blocks:{goal,scene,character,view,pose,expression,gaze,mouth,composition,output,avoid},variants?:[{pose,expression,view,mouth}],idempotency_key,unknown_price_approved?:bool}`. preview → `{prompt}`; estimate → `{per_image_microusd,total_microusd,currency:'USD',price_version,warnings:[]}`; submit → `{jobs:[records]}`. At most 32 explicit variants; `count` at most 8. Each job is one request and one image. No hidden cartesian product.
+- `job.list {project_id?}` → `[]`; `job.get {id}`; `job.cancel {id}`; `cost.project {project_id}` → `{calculated_microusd,estimated_microusd,reserved_microusd,unknown_count,currency}`
+- `settings.save {theme:'system'|'light'|'dark',mode:'simple'|'expert',export_dir?,naming_template?,job_limit_microusd?,project_limit_microusd?,warning_microusd?,concurrency:1,automation_approved:bool,rest_enabled:bool,mcp_enabled:bool}`; `secret.set {provider?:'gemini'|'openai'|'anthropic',key}`; `secret.delete {provider?}`; `tokens.create {name?,recipient?,purpose?,scope?:rest|mcp|both}` → `{token,access,notice}` once; `tokens.list {}`; `tokens.update {id,name?,recipient?,purpose?}`; `tokens.revoke {id?}` (secrets and tokens are handled by the main transport)
+- `export.create {project_id,asset_ids:[],format:'original'|'png'|'jpeg'|'webp'|'tiff'|'html'|'pdf'|'pptx'|'zip'|'sprite',title?,description?,include_metadata:false,width?,height?,fit:'contain'|'cover'|'fill'|'preserve',background:'#ffffff',layout:'single'|'contact',cell_width?,cell_height?,columns?,padding?,naming_template?}` → `{id,path,files:[],...}`; `export.read {id}` → `{mime,data_base64}`; `project.restore {data_base64}` → project
 
 ## Exports Rust boundary
-`pub fn create(root:&Path, project:&Value, assets:&[Value], options:&Value)->Result<Value>`; assets have `id, path` relative to root (e.g assets/id.png), `description,width,height,format` plus metadata. Output under root/exports, random exclusive export subdirectory; all formats generated in pure Rust, no runtime requirement. Return id/path/files.
+
+`pub fn create(root:&Path, project:&Value, assets:&[Value], options:&Value)->Result<Value>`; assets have `id` and `path` relative to root (e.g. `assets/id.png`), `description,width,height,format` plus metadata. Output goes under `root/exports` into a random exclusive export subdirectory; all formats are generated in pure Rust without runtime requirements. Returns id/path/files.
+
 `pub fn read_export(root:&Path,id:&str)->Result<Value>`
-`pub fn restore(root:&Path,bytes:&[u8])->Result<Value>` safely stages files under root, returns the validated package `{project,assets,styles,characters,jobs?}`. Core remaps IDs and paths transactionally. ZIP manifest versioned.
-Core routes export operations through these functions, runs with blocking code safety. Main key API `crate::secrets::provider_key()->Result<String>`, `key_status()->Value`, `set_provider_key(&str)->Result<()>`, `delete_provider_key()->Result<()>`.
+
+`pub fn restore(root:&Path,bytes:&[u8])->Result<Value>` safely stages files under root and returns the validated package `{project,assets,styles,characters,jobs?}`. The core remaps IDs and paths in a transaction. The ZIP manifest is versioned.
+
+The core routes export operations through these functions and runs them with blocking-code safety. Key API: `crate::secrets::provider_key()->Result<String>`, `key_status()->Value`, `set_provider_key(&str)->Result<()>`, `delete_provider_key()->Result<()>`.
 
 ## Frontend bridge
-`invoke('rpc',{op,args})` in Tauri. Browser testing fallback POST `/rpc` JSON `{op,args}`, Authorization Bearer only test environment supplied via browser memory/global injected by test, never localStorage; no mock data. native import with HTML input file -> base64; download export via export.read bytes; desktop export path displayed. Main may intercept secret/token/reveal operations.
 
-## Provider-Schlüssel und Fähigkeiten
+In Tauri: `invoke('rpc',{op,args})`. For browser testing, the fallback is POST `/rpc` with JSON `{op,args}`; the bearer token is supplied only by the test environment through browser memory or an injected global, never localStorage; no mock data. Native import uses an HTML file input → Base64; export downloads use `export.read` bytes; the desktop shows the export path. `main` may intercept secret, token and reveal operations.
 
-`state.key_status.providers.gemini` , `.openai` und `.anthropic` enthalten ausschließlich `{configured,status,store}`. Das bisherige `key_status.configured` bleibt Gemini zugeordnet. Bei `secret.set/delete` bedeutet ein ausgelassener Provider aus Kompatibilitätsgründen Gemini; ungültige Typen oder unbekannte Provider werden abgewiesen. Diese Operationen sind nur für die lokale GUI/CLI zugänglich, niemals REST/MCP.
+## Provider keys and capabilities
 
-Modelle und unterstützte Parameter werden aus `state.models` gelesen. OpenAI unterstützt die dort angegebenen datierten GPT-Image-2.5-Modelle, die drei App-Formate 1:1/3:2/2:3 und Qualitätsstufen. `quality` wird für OpenAI im Snapshot explizit auf `medium` gesetzt, wenn es fehlt; Gemini und Testprovider weisen das Feld ab. Ein API-Schlüssel ist kein ChatGPT-Login.
+`state.key_status.providers.gemini`, `.openai` and `.anthropic` contain only `{configured,status,store}`. The legacy `key_status.configured` refers to Gemini. For `secret.set/delete`, an omitted provider means Gemini for compatibility; invalid types or unknown providers are rejected. These operations are available only to the local GUI/CLI, never REST/MCP.
 
-## Stilvorschauen
+`configured` (boolean) only says that an entry was found; it confirms neither provider validity nor later read permission. `status` is `configured`, `missing` or `unavailable`. With `unavailable`, `configured` is false, but the status must not be shown as a definitely missing entry. The status query never requests key text.
 
-- `style.preview.prepare {id}` liefert `{project,style,description,blocks,aspect_ratio}` und legt bei Bedarf ein gewöhnliches, neutrales Projekt `Stilvorschauen` an. Kein Job und kein Provideraufruf. Nicht archivierte Vorschauprojekte werden wiederverwendet.
-- Aus dem Ergebnis den Generierungsauftrag bauen: `project_id: project.id`, `style_id: style.id`, `description`, `blocks`, `aspect_ratio: "1:1"`, ausgewählter Provider/Modell/Qualität sowie `count: 1`. Bestehende `prompt.preview`, `cost.estimate`, `job.submit` und `job.get` nutzen.
-- `asset.list {project_id,style_id,offset?,limit?}` filtert nach dem historischen Stilsnapshot, bevor paginiert wird.
-- `style.preview.set {id,asset_id}` setzt das ausdrücklich gewählte generierte Asset. Dessen Stilsnapshot muss zur Stil-ID passen und eine gültige historische Version enthalten. `asset_id: null` entfernt nur die Zuordnung. Fehlendes `asset_id` ist ein Fehler.
-- Stilfelder: `preview_prompt` (bei alten Datensätzen rückwärtskompatibler Standard), `preview_asset_id`, `preview_style_version`, `preview_provider`. Änderungen an Text/Stil bleiben versioniert. Das Setzen/Entfernen eines Vorschaubilds ändert die Stildefinition nicht.
+Models and supported parameters are read from `state.models`. OpenAI supports the dated GPT-Image-2.5 models listed there, the three app formats 1:1/3:2/2:3 and quality levels. For OpenAI, `quality` is explicitly set to `medium` in the snapshot if missing; Gemini and the test provider reject the field. An API key is not a ChatGPT login.
 
-Eine ältere Vorschau bleibt nach einer Stiländerung erhalten und wird über den Versionsvergleich als älter erkennbar. Duplizierte Stile beginnen ohne Vorschaubild. Die API führt keine heimlichen Neuberechnungen aus. REST/MCP nutzen dieselben Operationen und Freigaberegeln wie die GUI.
+## Style previews
 
-### Schlüsselstatus ohne Geheimniszugriff
+- `style.preview.prepare {id}` returns `{project,style,description,blocks,aspect_ratio}` and creates an ordinary neutral project "Stilvorschauen" (style previews) if needed. No job and no provider call. Non-archived preview projects are reused.
+- Build the generation request from the result: `project_id: project.id`, `style_id: style.id`, `description`, `blocks`, `aspect_ratio: "1:1"`, the chosen provider/model/quality and `count: 1`. Use the existing `prompt.preview`, `cost.estimate`, `job.submit` and `job.get`.
+- `asset.list {project_id,style_id,offset?,limit?}` filters by the historical style snapshot before paginating.
+- `style.preview.set {id,asset_id}` sets the explicitly chosen generated asset. Its style snapshot must match the style ID and contain a valid historical version. `asset_id: null` removes only the link. A missing `asset_id` is an error.
+- Style fields: `preview_prompt` (backward-compatible default for old records), `preview_asset_id`, `preview_style_version`, `preview_provider`. Text and style changes stay versioned. Setting or removing a preview image does not change the style definition.
 
-`state.key_status.providers.gemini` , `.openai` und `.anthropic` enthalten `configured` (Boolean), `status` (`configured`, `missing` oder `unavailable`) und `store`. `configured` sagt nur aus, dass ein Eintrag gefunden wurde; es bestätigt weder Provider-Gültigkeit noch spätere Freigabe zum Lesen. Bei `unavailable` ist `configured` false, der Status darf aber nicht als sicher fehlender Eintrag dargestellt werden. Die Statusabfrage fordert keinen Schlüsseltext an.
+An older preview is kept after a style change and recognizable as older through the version comparison. Duplicated styles start without a preview image. The API performs no hidden recalculations. REST/MCP use the same operations and approval rules as the GUI.
 
+## Price revision and text jobs
 
-## Preisrevision und Textjobs
+`pricing.catalog`, `pricing.refresh`, `assistant.models`, `assistant.estimate`, `assistant.submit`: full payloads and behavior in [API.md](API.md#pricing-and-the-claude-prompt-assistant), machine-readable in [openapi.json](openapi.json). Image and text submit support `expected_price_version`; `state.pricing_revision` is an opaque catalog hash for UI recalculation. Text jobs have `kind: prompt_assist` and the finished output in `result_text`; older jobs without `kind` count as image jobs. A ZIP with metadata contains the text job, inputs, system text, result and price snapshot. Sharing without metadata contains no jobs and no assistant texts. Restore sets jobs to `restored` and never starts them again.
 
-`pricing.catalog`, `pricing.refresh`, `assistant.models`, `assistant.estimate`, `assistant.submit`: vollständige Payloads und Verhalten siehe [API.md](API.md#preise-und-claude-prompt-assistent), maschinenlesbar in [openapi.json](openapi.json). Bild-/Text-Submit unterstützt `expected_price_version`; `state.pricing_revision` ist ein undurchsichtiger Kataloghash für UI-Neuberechnung. Textjobs haben `kind: prompt_assist`, fertige Ausgabe `result_text`; ältere Jobs ohne kind gelten als Bildjobs. ZIP mit Metadaten erhält Textjob, Eingaben, Systemtext, Ergebnis und Preissnapshot. Teilen ohne Metadaten enthält keine Jobs und keine Assistententexte. Wiederherstellung setzt Jobs auf `restored` und startet sie niemals erneut.
+## Access tokens
 
+The local-only `tokens.*` operations and the MCP environment contract are described in [API.md](API.md#local-access-management). Lists return only metadata and stable access IDs, never hashes or the bearer token again. Revocation applies per access to REST and/or MCP according to the scope set at creation.
 
-## Zugriffstokens
+## Series with one local approval
 
-Die nur lokal zugänglichen `tokens.*`-Operationen und der MCP-Umgebungsvertrag stehen in [API.md](API.md#lokale-zugangsverwaltung). Listen liefern ausschließlich Metadaten und stabile Zugangs-IDs; niemals Hashes oder erneut den Bearer-Token. Widerruf wirkt pro Zugang auf REST und/oder MCP entsprechend dem bei Erstellung festgelegten Bereich.
+- `series.submit {project_id,description,idempotency_key,items:[{description,provider,model,style_id?,character_id?,reference_ids?,aspect_ratio?,resolution?,quality?,blocks?,count?,variants?},…]}`. `items` uses the image parameters of `job.submit`, without its own `project_id`/`idempotency_key`; 1–32 expanded images. Description at most 1000 UTF-8 bytes. Unknown fields, including `origin`, are rejected.
+- `series.list {project_id?}`, `series.get {id}`: persistent requests including `origin`, `count`, `estimated_microusd`, `currency`, `items[].snapshot`, `job_ids`, `jobs`, `job_status_counts`. `status`: `pending|approved|rejected|cancelled`; `approved` refers to the approval, processing progress is in the job statuses.
+- `series.cancel {id}`: the whole request, best effort for running requests.
+- Local only: `series.approve {id}`, `series.reject {id}`. Approving twice never starts duplicates. No approval after rejection or cancellation.
 
-## Serien mit einmaliger lokaler Freigabe
+OpenAPI and the MCP tool schemas contain the four public series operations. Price or budget errors never produce a partially started series. The database version stays 1; new record type `series`, additive job fields `series_id`, `series_index`, `origin`. A project ZIP transfers assets and existing job history, but no active series approvals or access tokens; an imported project therefore cannot unlock automation.
 
-- `series.submit {project_id,description,idempotency_key,items:[{description,provider,model,style_id?,character_id?,reference_ids?,aspect_ratio?,resolution?,quality?,blocks?,count?,variants?},…]}`. `items` nutzt die Bildparameter von `job.submit`, ohne eigenes `project_id`/`idempotency_key`; 1–32 expandierte Bilder. Beschreibung maximal1000 UTF-8-Bytes. Unbekannte Felder einschließlich `origin` werden abgewiesen.
-- `series.list {project_id?}`, `series.get {id}`: persistente Aufträge inklusive `origin`, `count`, `estimated_microusd`, `currency`, `items[].snapshot`, `job_ids`, `jobs`, `job_status_counts`. `status`: `pending|approved|rejected|cancelled`; `approved` bezeichnet die Freigabe, der Verarbeitungsfortschritt steht in den Jobstatuswerten.
-- `series.cancel {id}`: gesamter Auftrag, bestmöglich für laufende Requests.
-- Nur lokal: `series.approve {id}`, `series.reject {id}`. Mehrfaches Freigeben startet keine Duplikate. Nach Ablehnung/Abbruch kein erneutes Freigeben.
+### Structured prompts
 
-OpenAPI und MCP-Toolschemas enthalten die vier öffentlichen Serienoperationen. Preis-/Budgetfehler erzeugen keine teilweise gestartete Serie. Die Datenbankversion bleibt1; neuer Recordtyp `series`, additive Jobfelder `series_id`, `series_index`, `origin`. Projekt-ZIP überträgt Assets und bestehende Jobhistorie, jedoch keine aktiven Serienfreigaben oder Zugriffstokens; ein importiertes Projekt kann dadurch keine Automation freischalten.
-
-### Gegliederte Prompts
-
-`description` ist die konkrete Einzelanweisung. `blocks.scene` beschreibt die gemeinsame Szene; `blocks.character` ergänzt die über `character_id` ausgewählte Bibliotheksfigur oder beschreibt weitere Figuren. `blocks.view` ist die Ansicht. Der Kern komponiert `[Gesamte Szene]`, optional `[Charakter]` und `[Einzelanweisung]` in dieser Reihenfolge. Projektziel, Stil und Charakterdefinition werden serverseitig einbezogen; Clients sollen sie nicht zusätzlich in `description` duplizieren. Leere optionale Abschnitte entfallen. Vorschau über `prompt.preview` abrufen; Snapshot und endgültiger Prompt werden beim Auftrag eingefroren. Alte gespeicherte Prompts werden nicht neu zusammengesetzt.
+`description` is the concrete individual instruction. `blocks.scene` describes the shared scene; `blocks.character` supplements the library character selected via `character_id` or describes further characters. `blocks.view` is the view. The core composes `[Gesamte Szene]` (scene), optionally `[Charakter]` (character) and `[Einzelanweisung]` (individual instruction) in this order. Project goal, style and character definition are added on the server side; clients should not duplicate them in `description`. Empty optional sections are omitted. Get a preview via `prompt.preview`; snapshot and final prompt are frozen with the job. Old stored prompts are never recomposed.
