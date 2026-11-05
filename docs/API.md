@@ -1,156 +1,154 @@
-# REST und MCP
+# REST and MCP
 
-In Einstellungen REST bzw. MCP einschalten. Automatisierte kostenpflichtige Aufträge brauchen zusätzlich die explizite Ausgabenfreigabe. Standardmäßig ist alles aus. Testprovider-Aufträge erzeugen ausschließlich lokale Testbilder.
+*Deutsch: [de/API.md](de/API.md)*
+
+Enable REST or MCP in the settings. Automated paid jobs additionally require explicit spending approval. Everything is off by default. Jobs for the test provider only create local test images.
 
 ## Headless
 
-macOS-Binary: `FrameStudio.app/Contents/MacOS/framestudio`.
+macOS binary: `FrameStudio.app/Contents/MacOS/framestudio`.
 
 ```sh
 "/path/to/FrameStudio.app/Contents/MacOS/framestudio" --serve
 ```
 
-Startet REST und den persistenten Worker ohne Fenster. `--data-dir /path/to/store` muss bei GUI/CLI/MCP übereinstimmen, wenn ein abweichender Datenbestand verwendet wird. Mehrere Prozesse dürfen denselben Bestand öffnen; die Workersperre serialisiert Requests. Laufende GUI aktiviert REST selbst. Bei belegtem Port nicht eine zweite REST-Instanz starten; MCP kann parallel laufen.
+Starts REST and the persistent worker without a window. If you use a non-default data store, pass the same `--data-dir /path/to/store` to GUI, CLI and MCP. Several processes may open the same store; the worker lock serializes requests. A running GUI enables REST itself. If the port is already taken, do not start a second REST instance; MCP can run alongside.
 
-`--rpc` liest einen lokalen JSON-Auftrag von stdin und gibt dessen JSON-Ergebnis aus. Dieser Modus ist vertrauenswürdige Administration, etwa um Einstellungen vor einem Headless-Start zu konfigurieren. Provider-Schlüssel niemals als Kommandozeilenargument oder in Skripte schreiben.
+`--rpc` reads one local JSON request from stdin and prints its JSON result. This mode is trusted administration, for example to configure settings before a headless start. Never pass provider keys as command-line arguments or write them into scripts.
 
 ## REST
 
-Unter Einstellungen → Zugänge & Zugriffstokens einen benannten REST-Zugang erzeugen, Empfänger und Zweck vermerken, den einmalig angezeigten Token kopieren und sicher beim Client hinterlegen. `scripts/rest-example.py` fragt es verdeckt ab und listet Projekte. Der Server akzeptiert ausschließlich Host `127.0.0.1:43120`, Bearer-Token und keinen Origin-Header. Er ist absichtlich kein Browser-Webservice. Einzelwiderruf in Einstellungen wird bei jedem weiteren Zugriff geprüft; andere Zugänge bleiben gültig.
+Under **Settings → REST, MCP & access**, create a named REST access, note recipient and purpose, copy the token (shown once) and store it safely with the client. `scripts/rest-example.py` prompts for it without echo and lists projects. The server accepts only host `127.0.0.1:43120`, a bearer token and no `Origin` header. It is deliberately not a browser web service. Individual revocation in the settings is checked on every request; other accesses stay valid.
 
 - GET `/v1/projects`
 - GET `/v1/jobs/{id}`
 - GET `/openapi.json`
-- POST `/v1/operations/{operation}` mit JSON-Argumentobjekt
-- POST `/rpc` mit `{ "op": "project.list", "args": {} }`
+- POST `/v1/operations/{operation}` with a JSON argument object
+- POST `/rpc` with `{ "op": "project.list", "args": {} }`
 
-Die vollständigen Operationen/Payloads stehen in [CONTRACT.md](CONTRACT.md); sie gelten für GUI, REST und MCP identisch. Schema zusätzlich per `framestudio --openapi` offline. Fehler: HTTP 400 mit `error`; nicht autorisierte Zugriffe: 401. Bild-/Exportbytes kommen als `data_base64` und `mime`, nicht nur als unzugänglicher Pfad.
+All operations and payloads are listed in [CONTRACT.md](CONTRACT.md); they are identical for GUI, REST and MCP. The schema is also available offline via `framestudio --openapi`. Errors: HTTP 400 with `error`; unauthorized requests: 401. Image and export bytes are returned as `data_base64` and `mime`, not only as an inaccessible path.
 
-Ablauf: `project.save` → `style.list` → `character.save` → `asset.import` → `prompt.preview` → `cost.estimate` → `job.submit` (eindeutiger `idempotency_key`) → `job.get`/`job.list` → `asset.list`/`asset.read` → `export.create`/`export.read`. Die unveränderte Idempotenz-ID für einen Wiederholungsversuch verhindert einen zweiten lokalen Start. Änderungen am Auftrag brauchen eine neue ID. Das ist keine Exactly-once-Zusage des Providers.
+Typical flow: `project.save` → `style.list` → `character.save` → `asset.import` → `prompt.preview` → `cost.estimate` → `job.submit` (unique `idempotency_key`) → `job.get`/`job.list` → `asset.list`/`asset.read` → `export.create`/`export.read`. Reusing the unchanged idempotency key on a retry prevents a second local start. A changed request needs a new key. This is not an exactly-once guarantee from the provider.
 
-## MCP stdio
+## MCP over stdio
 
-Offizielles Rust-SDK `rmcp`, kein selbst gebauter JSON-RPC-Ersatz. Konfiguration für einen lokalen MCP-Host (Pfade an die Installation anpassen):
+Uses the official Rust SDK `rmcp`, not a home-grown JSON-RPC replacement. Configuration for a local MCP host (adjust the path to your installation):
 
 ```json
 {"mcpServers":{"framestudio":{"command":"/path/to/FrameStudio.app/Contents/MacOS/framestudio","args":["--mcp"]}}}
 ```
 
-Der lokale Host muss `FRAMESTUDIO_MCP_TOKEN` an den MCP-Kindprozess weitergeben. Dazu in FrameStudio einen Zugang mit Bereich **MCP** oder **REST & MCP** anlegen. Die Konfigurationsdatei oben enthält absichtlich kein Geheimnis; ohne gesetzte Variable schlägt der Start verständlich fehl. Keine Provider-Schlüssel als lokale Zugriffstokens verwenden. Die aktive Betriebssystem-Sitzung stellt separat den Provider-Keychain-Zugang her. Werkzeuge ersetzen den Punkt im Operationsnamen durch Unterstrich, z.B. `job_submit`. `asset_read` liefert native MCP-Bildinhalte und strukturierte Metadaten, `export_read` die vollständigen Dateibytes. Lokaler ausführbarer SDK-Client:
+The local host must pass `FRAMESTUDIO_MCP_TOKEN` to the MCP child process. Create an access with scope **MCP** or **REST & MCP** in FrameStudio. The configuration above intentionally contains no secret; without the variable the start fails with a clear message. Do not use provider keys as local access tokens. The active OS session provides keychain access to provider keys separately. Tool names replace the dot in operation names with an underscore, e.g. `job_submit`. `asset_read` returns native MCP image content plus structured metadata, `export_read` the complete file bytes. Local executable SDK client:
 
 ```zsh
-# Token verdeckt eingeben; steht weder in der Kommandozeile noch im Shell-Verlauf.
-read -rs 'FRAMESTUDIO_MCP_TOKEN?MCP-Zugriffstoken: '
+# Enter the token without echo; it does not appear on the command line or in shell history.
+read -rs 'FRAMESTUDIO_MCP_TOKEN?MCP access token: '
 print
 export FRAMESTUDIO_MCP_TOKEN
 cargo run --manifest-path src-tauri/Cargo.toml --no-default-features --example mcp_client -- /path/to/framestudio
 unset FRAMESTUDIO_MCP_TOKEN
 ```
 
-Für einen eigenen MCP-Host dessen Geheimnis-/Umgebungsvariablenverwaltung verwenden. Ein über Finder gestarteter Host übernimmt keine Variablen aus einem Terminalfenster. Keine echten Tokens in Git, Beispiel-JSON oder Shellskripte schreiben. Der mitgelieferte SDK-Client erbt die Variable; der Server prüft den Bereich beim Start und den Widerruf bei jedem Werkzeugaufruf sowie `tools/list`. Ein abgelehnter Start startet keinen Worker.
+For your own MCP host, use its secret or environment-variable management. A host started from Finder does not inherit variables from a terminal window. Never put real tokens into Git, example JSON or shell scripts. The bundled SDK client inherits the variable; the server checks the scope at start and revocation on every tool call and on `tools/list`. A rejected start does not start a worker.
 
-Ein gehostetes Modell kann nicht direkt auf localhost oder stdio dieses Macs zugreifen. Ein eigener lokaler Agent startet den MCP-Prozess, ruft Werkzeuge auf und vermittelt bei Bedarf Ergebnisse an seine Modell-API. Er entscheidet dabei ausdrücklich, welche lokalen Inhalte er nach außen übermittelt. FrameStudio öffnet keinen Tunnel.
+A hosted model cannot reach localhost or stdio on this computer by itself. A local agent of your own starts the MCP process, calls tools and, if needed, passes results to its model API. That agent decides explicitly which local content leaves the machine. FrameStudio does not open a tunnel.
 
-## Persistente Exportjobs
+## Persistent export jobs
 
-Für längere Exporte `export.submit` mit denselben Argumenten wie `export.create` aufrufen. Die Antwort enthält eine persistente Exportjob-ID; `export.get {id}` liefert `queued`, `running`, `completed` oder `failed`. Nach `completed` enthält `result.id` die ID für `export.read`. Die GUI nutzt diesen Ablauf. `export.create` bleibt als synchrone Komfortoperation verfügbar. `export.preview` zeigt die vom Kern bereinigten Dateinamen vorab. `--worker` betreibt nur den Verbraucher ohne HTTP-Port/Fenster. Exportaufträge sind lokal und lösen keine Providerkosten aus.
+For longer exports, call `export.submit` with the same arguments as `export.create`. The response contains a persistent export job ID; `export.get {id}` returns `queued`, `running`, `completed` or `failed`. After `completed`, `result.id` is the ID for `export.read`. The GUI uses this flow. `export.create` remains available as a synchronous convenience operation. `export.preview` shows the file names sanitized by the core in advance. `--worker` runs only the consumer, without HTTP port or window. Export jobs are local and cause no provider costs.
 
-## OpenAI neben Gemini
+## OpenAI alongside Gemini
 
-Schlüssel getrennt in den App-Einstellungen hinterlegen. Für `cost.estimate`, `prompt.preview` und `job.submit` ist `provider: "openai"` verfügbar. Unterstützte Modell-IDs und Fähigkeiten zuerst über `state.models` lesen. Beispielargumente (Projekt-ID ersetzen):
-
-```json
-{"project_id":"PROJECT_UUID","description":"Eine technische Strichzeichnung einer Werkstatt","provider":"openai","model":"gpt-image-2.5-sunburst-2026-09-08","aspect_ratio":"3:2","resolution":"1K","quality":"medium","count":1,"reference_ids":[],"idempotency_key":"workshop-image-001"}
-```
-
-Die Angabe `1K` entspricht hier 1024×1024, 1536×1024 oder 1024×1536 je Seitenverhältnis. Referenzen verwenden bestehende Asset-IDs desselben Projekts. Automatisierte OpenAI-Aufträge benötigen dieselbe vorherige Ausgabenfreigabe und atomare Budgetreservierung wie Gemini. Keine Schlüssel im Auftrag übergeben. Die obigen Argumente allein lösen keinen Auftrag aus; dafür ist `job.submit` erforderlich.
-
-## Stilvorschauen über REST/MCP
-
-`style.preview.prepare {id}` bereitet einen Stil und sein gewöhnliches Vorschauprojekt vor. Anschließend die gelieferten Felder mit `style_id: style.id` und `project_id: project.id` über `prompt.preview` und `cost.estimate` prüfen und erst mit `job.submit` starten. Nach Abschluss `asset.list` mit `style_id` aufrufen und mit `style.preview.set {id,asset_id}` ausdrücklich das gewünschte Ergebnis auswählen. MCP-Namen: `style_preview_prepare` und `style_preview_set`. Das Vorbereiten und Zuordnen kostet nichts; die Erzeugung ist ein normaler budgetierter Providerauftrag und erfordert bei Automation weiterhin eine lokale Ausgabenfreigabe.
-
-
-## Preise und Claude-Prompt-Assistent
-
-- `pricing.catalog {}` liefert Anbieter, Modelle, Preisstände, Quellen, Prüfdatum und klar als Ausgabeanteil gekennzeichnete Bildpreisbeispiele. Claude hat `capability: prompt_assistance` und `no_image_generation: true`.
-- `pricing.refresh {provider?: "gemini"|"openai"|"anthropic"}` prüft öffentliche Quellen; ohne Auswahl alle drei. Keine Modellanfrage, keine Schlüssel und keine frei wählbare URL. Anbieterstatus `error` bedeutet: bisherige Preise behalten. `updated` bestätigt eine geprüfte Preisquelle, keine erfolgreiche Modellgenerierung.
-- `assistant.models {}` liefert unterstützte Textmodelle. `assistant.estimate {project_id,text,instruction?,provider?,model?}` liefert Mikro-USD, Warnungen und `price_version`. Standard ist Anthropic; der kostenlose Testassistent muss ausdrücklich mit `provider: "test"` gewählt werden.
-- `assistant.submit` nimmt dieselben Felder plus `idempotency_key` und optional `expected_price_version` entgegen. Antwort `{jobs,reused}`. `job.get`/`job.cancel` gelten unverändert; fertiger Text steht in `result_text`, Jobart in `kind: prompt_assist`. Es entstehen keine Assets oder Folgejobs.
-- `cost.project` enthält neben Gesamtkosten `by_kind.image_generation` und `by_kind.prompt_assist`. Beide belasten dieselben atomaren Startgrenzen. Automatisierte Anthropic-Aufträge brauchen vorherige Ausgabenfreigabe, auch wenn `provider` im Auftrag ausgelassen wurde.
-
-MCP-Namen ersetzen Punkte durch Unterstriche, beispielsweise `assistant_estimate` und `pricing_refresh`. Beispiel für einen **lokalen, kostenlosen** Texttest (Projekt-ID ersetzen):
+Store the keys separately in the app settings. `cost.estimate`, `prompt.preview` and `job.submit` accept `provider: "openai"`. Read the supported model IDs and capabilities from `state.models` first. Example arguments (replace the project ID):
 
 ```json
-{"op":"assistant.submit","args":{"project_id":"PROJECT_UUID","text":"Ein Retro-Roboter in einer Werkstatt.","instruction":"Komposition genauer beschreiben.","provider":"test","idempotency_key":"prompt-test-001"}}
+{"project_id":"PROJECT_UUID","description":"A technical line drawing of a workshop","provider":"openai","model":"gpt-image-2.5-sunburst-2026-09-08","aspect_ratio":"3:2","resolution":"1K","quality":"medium","count":1,"reference_ids":[],"idempotency_key":"workshop-image-001"}
 ```
 
-Bei Bild- und Textaufträgen nach der Schätzung deren `price_version` als `expected_price_version` mitsenden. Der Kern weist einen zwischenzeitlich geänderten Preis vor der Reservierung zurück. Wiederholte identische Aufträge behalten denselben Idempotenzschlüssel. Schlüssel weiterhin ausschließlich lokal in den Einstellungen ablegen, niemals als REST-/MCP-Payload.
+Here `1K` means 1024×1024, 1536×1024 or 1024×1536 depending on the aspect ratio. References use existing asset IDs from the same project. Automated OpenAI jobs need the same prior spending approval and atomic budget reservation as Gemini. Never pass keys in a request. The arguments above do not start anything on their own; that requires `job.submit`.
 
+## Style previews via REST/MCP
 
-## Lokale Zugangsverwaltung
+`style.preview.prepare {id}` prepares a style and its ordinary preview project. Then check the returned fields with `style_id: style.id` and `project_id: project.id` via `prompt.preview` and `cost.estimate`, and only then start with `job.submit`. When the job is done, call `asset.list` with `style_id` and choose the desired result explicitly with `style.preview.set {id,asset_id}`. MCP names: `style_preview_prepare` and `style_preview_set`. Preparing and assigning are free; generation is a normal budgeted provider job and, when automated, still requires local spending approval.
 
-Nur vertrauenswürdige GUI/CLI-Administration, nicht über REST/MCP aufrufbar:
+## Pricing and the Claude prompt assistant
 
-| Operation | Payload / Ergebnis |
+- `pricing.catalog {}` returns providers, models, price versions, sources, check dates and image price examples clearly labeled as output share. Claude has `capability: prompt_assistance` and `no_image_generation: true`.
+- `pricing.refresh {provider?: "gemini"|"openai"|"anthropic"}` checks public sources; without a choice, all three. No model request, no keys and no user-supplied URL. A provider status of `error` means the previous prices are kept. `updated` confirms a checked price source, not a successful generation.
+- `assistant.models {}` returns supported text models. `assistant.estimate {project_id,text,instruction?,provider?,model?}` returns micro-USD, warnings and `price_version`. Anthropic is the default; the free test assistant must be selected explicitly with `provider: "test"`.
+- `assistant.submit` takes the same fields plus `idempotency_key` and optionally `expected_price_version`. Response `{jobs,reused}`. `job.get`/`job.cancel` work unchanged; the finished text is in `result_text`, the job kind is `kind: prompt_assist`. No assets or follow-up jobs are created.
+- `cost.project` contains, besides the totals, `by_kind.image_generation` and `by_kind.prompt_assist`. Both count against the same atomic start limits. Automated Anthropic jobs need prior spending approval even if `provider` was omitted.
+
+MCP names replace dots with underscores, e.g. `assistant_estimate` and `pricing_refresh`. Example for a **local, free** text test (replace the project ID):
+
+```json
+{"op":"assistant.submit","args":{"project_id":"PROJECT_UUID","text":"A retro robot in a workshop.","instruction":"Describe the composition in more detail.","provider":"test","idempotency_key":"prompt-test-001"}}
+```
+
+For image and text jobs, send the estimate's `price_version` as `expected_price_version`. The core rejects a price that changed in the meantime before reserving. Repeated identical requests keep the same idempotency key. Keys are stored only locally in the settings, never in a REST/MCP payload.
+
+## Local access management
+
+Trusted GUI/CLI administration only, not callable via REST/MCP:
+
+| Operation | Payload / result |
 |---|---|
-| `tokens.list` | `{}` → Liste von Metadaten, niemals Token oder Hash |
-| `tokens.create` | `{name,recipient,purpose,scope}` → `{token,access,notice}`; `scope`: `rest`, `mcp`, `both`; Token einmalig |
-| `tokens.update` | `{id,name?,recipient?,purpose?}` → Metadaten; Bereich und Erstellung nicht nachträglich veränderbar |
-| `tokens.revoke` | `{id}` → `{revoked:true,count}`; nur diesen Zugang sperren; Verlauf bleibt |
+| `tokens.list` | `{}` → list of metadata, never token or hash |
+| `tokens.create` | `{name,recipient,purpose,scope}` → `{token,access,notice}`; `scope`: `rest`, `mcp`, `both`; token shown once |
+| `tokens.update` | `{id,name?,recipient?,purpose?}` → metadata; scope and creation time cannot be changed |
+| `tokens.revoke` | `{id}` → `{revoked:true,count}`; revokes only this access; history is kept |
 
-Metadaten: `id`, `name`, `recipient`, `purpose`, `scope`, `created_at`, `last_used_at`, `revoked_at`, `active`. Zeiten stammen vom lokalen System, neue Werte sind RFC3339/UTC. Alte SQLite-Erstellungszeiten sind ebenfalls UTC. Letzte Nutzung bedeutet erfolgreiche Zugangsauthentifizierung, nicht erfolgreichen Abschluss eines Jobs. Empfänger ist eine selbst gepflegte Zuordnung, kein überprüftes Benutzerkonto.
+Metadata: `id`, `name`, `recipient`, `purpose`, `scope`, `created_at`, `last_used_at`, `revoked_at`, `active`. Times come from the local system; new values are RFC 3339/UTC. Older SQLite creation times are UTC as well. "Last used" means successful access authentication, not a successfully completed job. The recipient is a self-maintained label, not a verified user account.
 
-Kompatibilität: Bestehende REST-Tokens bleiben gültig und erscheinen als „Bestehender API-Zugang“. Sie lassen sich nachträglich beschriften. `tokens.create {}` bleibt für lokale Skripte möglich (REST), `tokens.revoke {}` widerruft weiterhin alle aktiven Zugänge. Die GUI verwendet ausschließlich den Einzelwiderruf. **MCP verlangt ab dieser Version einen passenden Token**; ältere tokenlose MCP-Konfigurationen müssen um die oben erklärte Host-Umgebung ergänzt werden.
+Compatibility: existing REST tokens remain valid and appear as "Existing API access". They can be labeled afterwards. `tokens.create {}` still works for local scripts (REST), and `tokens.revoke {}` still revokes all active accesses. The GUI uses individual revocation only. **MCP requires a matching token from this version on**; older token-less MCP configurations must add the host environment described above.
 
-Widerruf verhindert neue Operationen, beendet aber keinen bereits angenommenen Auftrag und holt bereits abgerufene Daten nicht zurück. Jobs bei Bedarf zusätzlich abbrechen. Tokenrechte umfassen die zugelassenen Projektoperationen des gewählten Transportwegs; kostenpflichtige Automation braucht weiterhin ihre gesonderte lokale Freigabe und Budgets. Derselbe OS-Benutzer kann die lokale CLI administrieren: Tokens sind Client-Zugangsverwaltung, keine Isolation gegen den Besitzer der lokalen Dateien.
+Revocation blocks new operations but does not stop an already accepted job or recall data already retrieved. Cancel jobs separately if needed. Token rights cover the permitted project operations of the chosen transport; paid automation still needs its separate local approval and budgets. The same OS user can administer the local CLI: tokens manage client access, they are not isolation against the owner of the local files.
 
-Nach dem Update alle alten GUI-/Headless-/MCP-Instanzen nach Abschluss laufender Jobs beenden und mit dem neuen Binary starten. Bereits laufende ältere Versionen kennen die neue Tokenverwaltung nicht; für deren Verhalten gelten die neuen Prüfungen nicht. Die App startet oder beendet keine fremden Nutzerprozesse automatisch.
+After an update, stop all old GUI, headless and MCP instances once running jobs are finished, and start them with the new binary. Older versions that are still running do not know the new token management, so the new checks do not apply to them. The app does not start or stop other user processes automatically.
 
-## Eine Freigabe für eine vollständige Serie
+## One approval for a complete series
 
-Für Serien **`series.submit` / `series_submit`** verwenden. Der Client reicht Beschreibung, Projekt, stabile Idempotenz-ID und die konkrete Liste aller Bilder gemeinsam ein. Antwort: Serien-ID, Status `pending`, authentifizierte Herkunft, Bildanzahl und Gesamtschätzung in Mikro-USD. Noch kein Job wird verarbeitet und kein Budget reserviert. In der laufenden GUI oben **Serienfreigaben** öffnen, Zusammenfassung/Bildliste prüfen und **Gesamte Serie freigeben** wählen. Die Freigabe gilt für alle eingefrorenen Bilder; eine erneute Bestätigung pro Bild ist nicht nötig. Sie erteilt keine allgemeine Ausgabenfreigabe für spätere Aufträge.
+Use **`series.submit` / `series_submit`** for series. The client submits description, project, a stable idempotency key and the concrete list of all images together. Response: series ID, status `pending`, authenticated origin, image count and total estimate in micro-USD. No job is processed and no budget reserved yet. In the running GUI, open **Series approvals**, review the summary and image list and choose **Approve entire series**. The approval covers all frozen images; no per-image confirmation is needed. It does not grant general spending approval for later jobs.
 
-`series.get {"id":"…"}` / `series_get` liefert danach `job_ids`, alle Jobs und `job_status_counts`; `asset.list/read` liefern die Ergebnisse. `series.cancel` stoppt wartende Bilder und fordert den bestmöglichen Abbruch bereits laufender Bilder an. `series.approve/reject` sind ausschließlich lokale Administrationsoperationen, keine REST-/MCP-Werkzeuge. Ohne GUI bleibt ein Auftrag pending; der lokale Besitzer kann nach Prüfung über vertrauenswürdiges `--rpc` freigeben. Eine gehostete Modell-API kann diese lokale Freigabe nicht selbst erteilen.
+Afterwards, `series.get {"id":"…"}` / `series_get` returns `job_ids`, all jobs and `job_status_counts`; `asset.list/read` return the results. `series.cancel` stops waiting images and requests best-effort cancellation of running ones. `series.approve/reject` are local administration operations only, not REST/MCP tools. Without a GUI a request stays pending; the local owner can approve it after review via trusted `--rpc`. A hosted model API cannot grant this local approval itself.
 
-Herkunft: Transport REST/MCP plus ID, Name, Empfänger und Zweck des tatsächlich authentifizierten Tokens. Die Beschriftung dokumentiert den Zugang, keine verifizierte Personenidentität oder das konkrete Programm hinter einem geteilten Token. Der Client kann kein `origin`-Feld einschleusen. Änderungen am Tokenlabel ändern historische Herkunft nicht. Widerruf blockiert neue Schnittstellenaufrufe; bereits eingereichte/freigegebene Serien bei Bedarf separat ablehnen/abbrechen.
+Origin: transport REST/MCP plus ID, name, recipient and purpose of the token that actually authenticated. The label documents the access, not a verified person or the specific program behind a shared token. The client cannot inject an `origin` field. Changing a token label does not change historical origins. Revocation blocks new interface calls; reject or cancel already submitted or approved series separately if needed.
 
-Grenzen: maximal32 Bilder nach Auflösung von `count`/`variants`, maximal100 offene Freigaben. Ein Projekt pro Serie; je Bild dürfen Stil, Charakter, Referenzen, Prompt, Provider und Modell abweichen. Motive, Referenzen und Promptbausteine bleiben eingefroren. Vor der lokalen Freigabe darf der Nutzer Anbieter, Modell, Qualität und Auflösung für die gesamte Serie wählen. Nicht unterstützte Seitenverhältnisse oder Referenzen blockieren diese Auswahl, statt Inhalte still anzupassen. Der eingereichte Stand bleibt unter `submitted_items` erhalten, die freigegebenen Snapshots stehen unter `items`. Inhaltliche Änderungen benötigen einen neuen Auftrag/neuen Idempotenzschlüssel. Preisänderungen nach der angezeigten Vorschau blockieren den Start bis zur erneuten Prüfung. Beim Freigeben werden die gesamte Auftragsgrenze und das aktuelle Projektbudget in derselben SQLite-Transaktion wie alle Jobstarts geprüft/reserviert. Kosten sind Schätzungen und keine garantierte Providerobergrenze. Ein Fehler wird nicht automatisch wiederholt; übrige freigegebene Bilder laufen weiter. Erfolgreiche Wiederholung einzelner Bilder ist ein neuer Auftrag.
+Limits: at most 32 images after expanding `count`/`variants`, at most 100 pending approvals. One project per series; style, character, references, prompt, provider and model may differ per image. Subjects, references and prompt blocks stay frozen. Before local approval, the user may choose provider, model, quality and resolution for the entire series. Unsupported aspect ratios or references block that choice instead of silently adapting content. The submitted state is kept under `submitted_items`, the approved snapshots under `items`. Content changes need a new request and a new idempotency key. Price changes after the displayed preview block the start until it is checked again. On approval, the overall job limit and the current project budget are checked and reserved in the same SQLite transaction as all job starts. Costs are estimates, not a guaranteed provider cap. A failure is not retried automatically; the remaining approved images continue. Retrying a single image successfully is a new request.
 
-**Kompatibilität:** `job.submit` bleibt für direkte Aufträge bestehen und benötigt bei kostenpflichtiger Automation weiterhin die vorhandene allgemeine lokale Freigabe. Für die hier beschriebene Freigabe pro Serie `series.submit` verwenden; die allgemeine Automationseinstellung kann ausgeschaltet bleiben. Sitzungsschlüssel gelten nur im jeweiligen Prozess. Wird eine Serie mit aktivem Sitzungsschlüssel freigegeben, beansprucht nur ein Worker mit aktivem Sitzungsschlüssel für den jeweiligen Provider diese Jobs; ein MCP-/Headless-Prozess ohne diesen Schlüssel überspringt sie. Nach einem Neustart bleiben die Bilder wartend, bis der Sitzungsschlüssel wieder eingegeben wird. Die Freigabe bleibt erhalten, der Schlüssel wird niemals zwischen Prozessen übertragen.
+**Compatibility:** `job.submit` remains available for direct jobs and, for paid automation, still needs the existing general local approval. For the per-series approval described here, use `series.submit`; the general automation setting can stay off. Session keys exist only in their own process. If a series is approved while a session key is active, only a worker with an active session key for that provider claims these jobs; an MCP or headless process without that key skips them. After a restart, the images stay waiting until the session key is entered again. The approval is kept; the key is never transferred between processes.
 
-Ausführbare Beispiele (standardmäßig nur lokaler Testprovider): Projekt-ID in `examples/series-request.json` einsetzen. Für echte Bilder Provider/Modell ausdrücklich im JSON setzen; die lokale Serienfreigabe bleibt erforderlich.
+Executable examples (local test provider by default): put your project ID into `examples/series-request.json`. For real images, set provider and model explicitly in the JSON; local series approval is still required.
 
 ```sh
 python3 scripts/rest-series.py examples/series-request.json
-python3 scripts/rest-series.py --status SERIEN-ID
-# MCP-Token wie oben sicher an den lokalen Host übergeben:
+python3 scripts/rest-series.py --status SERIES-ID
+# Pass the MCP token to the local host securely, as shown above:
 cargo run --manifest-path src-tauri/Cargo.toml --locked --no-default-features --example mcp_series_client -- /path/to/framestudio examples/series-request.json
 ```
 
-Keine Provider-Schlüssel oder Zugriffstokens in die JSON-Datei schreiben. Idempotenz gilt pro Transport und Zugang: dieselbe ID mit identischem Inhalt liefert dieselbe Serie, auch nach einem Neustart oder einer verlorenen Antwort. Das erneute Absenden einer abgelehnten Serie öffnet sie nicht erneut.
+Never write provider keys or access tokens into the JSON file. Idempotency applies per transport and access: the same key with identical content returns the same series, even after a restart or a lost response. Resubmitting a rejected series does not reopen it.
 
+## Compare models before approving a series
 
-## Modelle vor einer Serienfreigabe vergleichen
+`series.quote {id, selection?: {provider, model, resolution, quality?}}` (MCP `series_quote`) computes a complete new cost preview without provider call, job or reservation. Without `selection`, the model choice of the submitted images is kept; with a selection, it applies to all images. Response: `items` with unchanged prompts/references, `estimated_microusd`, `count`, `currency`, `quote_id` and the general `job_limit_microusd`. Use quality levels and resolutions from `state.models`. Only existing capabilities are allowed; formats are never changed automatically.
 
-`series.quote {id, selection?: {provider, model, resolution, quality?}}` (MCP `series_quote`) berechnet eine vollständige neue Kostenvorschau ohne Provideraufruf, Job oder Reservierung. Ohne `selection` bleibt die Modellauswahl der eingereichten Bilder erhalten. Mit Auswahl gilt sie für alle Bilder. Antwort: `items` mit unveränderten Prompts/Referenzen, `estimated_microusd`, `count`, `currency`, `quote_id`, allgemeine `job_limit_microusd`. Qualitätsstufen und Auflösungen aus `state.models` verwenden. Nur vorhandene Fähigkeiten sind erlaubt; keine automatische Formatänderung.
+The GUI shows models greyed out with estimates even when the key is missing. There is currently one stored key per provider plus an optional session key that takes priority; multiple accounts for the same provider are not supported. Key status does not confirm provider permission; local read access is checked before approval.
 
-Die GUI zeigt Modelle auch bei fehlendem Schlüssel ausgegraut mit Schätzungen. Pro Anbieter gibt es derzeit einen gespeicherten Schlüssel und optional einen vorrangigen Sitzungsschlüssel, keine Auswahl mehrerer Konten desselben Anbieters. Key-Status ist keine bestätigte Providerberechtigung; vor Freigabe wird der lokale Lesezugriff geprüft.
+Local only: `series.approve {id, selection?, expected_quote}` recomputes the same preview inside the start transaction. A different `quote_id` prevents the start. A provider change without `expected_quote` is rejected. The original request and authenticated origin are kept; resubmitting with the original idempotency key does not create a second request.
 
-Lokal: `series.approve {id, selection?, expected_quote}` berechnet dieselbe Vorschau erneut in der Starttransaktion. Eine abweichende `quote_id` verhindert den Start. Anbieteränderung ohne `expected_quote` wird abgewiesen. Die Originalanfrage und authentifizierte Herkunft bleiben erhalten; wiederholtes Einreichen mit ursprünglicher Idempotenz-ID erstellt keinen zweiten Auftrag.
+If the series exceeds the general start limit, the local user can confirm an additional checkbox for this series only. The approval then contains `series_limit_microusd` with exactly the checked total. This changes no global setting, does not lift the project budget and cannot be granted via REST/MCP. Without this explicit choice, the general start limit applies unchanged. The total is reserved atomically for all images; costs remain estimates, not a guaranteed invoice.
 
-Übersteigt die Serie die allgemeine Startgrenze, kann der lokale Nutzer ausschließlich für diese Serie eine zusätzliche Checkbox bestätigen. Dann enthält die Freigabe `series_limit_microusd` in exakt der geprüften Gesamthöhe. Das verändert keine globale Einstellung, hebt das Projektbudget nicht auf und ist über REST/MCP nicht freigebbar. Ohne diese ausdrückliche Auswahl gilt unverändert die allgemeine Startgrenze. Die Summe wird atomar für alle Bilder reserviert; Kosten bleiben Schätzungen, keine garantierte Rechnung.
+Local key diagnosis: `secret.check {provider, source?: "active"|"keychain"}`. The default `active` uses an existing session key before the OS store. `keychain` checks only the OS store without removing a session key. Returns status only: no plaintext, no provider call. This operation stays blocked for REST/MCP.
 
+## Export only the images of a series
 
-Lokale Schlüsseldiagnose: `secret.check {provider, source?: "active"|"keychain"}`. Standard `active` nutzt einen vorhandenen Sitzungsschlüssel vor dem OS-Speicher. `keychain` prüft ausschließlich den Betriebssystem-Speicher, ohne einen Sitzungsschlüssel zu entfernen. Rückgabe nur Status; kein Klartext, kein Provideraufruf. Diese Operation ist über REST/MCP weiterhin gesperrt.
+`asset.list` additionally accepts `series_id` together with `project_id`. The response contains only saved results of the series jobs in their order, with `total`, `offset` and `limit` (at most 200 per page). Imported references and other series are excluded; a series from another project is rejected. Fetch all pages and pass the ordered `items[].id` as `asset_ids` to `export.submit`. Do not start an export for an empty result: an empty export selection still means "entire project". `export.get` returns the status; `export.read` returns the file, or a ZIP as Base64 for several files. No regeneration and no provider costs.
 
-## Nur die Bilder einer Serie exportieren
+## Additions in 0.2.0
 
-`asset.list` akzeptiert zusätzlich `series_id` zusammen mit `project_id`. Die Antwort enthält ausschließlich gespeicherte Ergebnisse der Serienjobs in deren Reihenfolge, mit `total`, `offset` und `limit` (maximal 200 pro Seite). Importierte Referenzen und fremde Serien sind ausgeschlossen; eine Serie eines anderen Projekts wird abgelehnt. Alle Seiten abfragen und die geordneten `items[].id` als `asset_ids` an `export.submit` übergeben. Bei leerem Ergebnis keinen Export starten: Eine leere Exportauswahl bedeutet weiterhin „ganzes Projekt“. `export.get` liefert den Status; `export.read` liefert die Datei oder bei mehreren Dateien ein ZIP als Base64. Keine erneute Generierung und keine Providerkosten.
+`project.prompt.save`: `{id, prompt_template: {scene, character, instruction}}` stores the three editor defaults; only these text fields are allowed (8000 UTF-8 bytes each). `project.save` accepts the same template. For automated generation, still pass the desired `blocks.scene`, `blocks.character` and `description` explicitly; the template does not replace request parameters.
 
-## Ergänzungen 0.2.0
+`assistant.estimate` / `assistant.submit` accept `target: scene | character | instruction | all` (default: instruction). After validation, `all` returns `result_sections` with the three fields; an unstructured or invalid result is treated as an error and never applied automatically. Model answers remain paid text jobs; approvals and budgets apply unchanged. `character.save` accepts `portrait_asset_id`: a generated asset from the same project, independent of `reference_ids`. An empty string enables automatic portrait selection.
 
-`project.prompt.save`: `{id, prompt_template: {scene, character, instruction}}` speichert die drei Editor-Vorgaben; erlaubt sind ausschließlich diese Textfelder (je 8000 UTF-8-Bytes). `project.save` akzeptiert dieselbe Vorlage. Bei automatisierten Generierungen weiterhin die gewünschten `blocks.scene`, `blocks.character` und `description` ausdrücklich mitgeben; die Vorlage ersetzt keine Requestparameter.
-
-`assistant.estimate` / `assistant.submit` akzeptieren `target: scene | character | instruction | all` (Standard: instruction). `all` liefert nach Validierung `result_sections` mit den drei Feldern; unstrukturiertes/ungültiges Ergebnis wird als Fehler behandelt und nicht automatisch angewendet. Modellantworten bleiben kostenpflichtige Textjobs; Freigaben und Budgets gelten unverändert. `character.save` akzeptiert `portrait_asset_id`: erzeugtes Asset aus demselben Projekt, unabhängig von `reference_ids`. Leerer String aktiviert die automatische Portraitauswahl.
-
-Der Projektpapierkorb und Dateisystem-SBOM-Export sind lokale Verwaltungsfunktionen und werden nicht als automatisierte REST-/MCP-Werkzeuge freigegeben.
+The project trash and the file-system SBOM export are local administration functions and are not exposed as automated REST/MCP tools.

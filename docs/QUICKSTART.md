@@ -1,12 +1,14 @@
 # FrameStudio Quickstart
 
-Create your first image, review its cost and export it. This guide uses **FrameStudio 0.3.0 for macOS** with the English interface.
+*Deutsch: [de/QUICKSTART.md](de/QUICKSTART.md)*
+
+Create your first image, review its cost and export it. This guide uses **FrameStudio 0.3.0** with the English interface. The screenshots show macOS; the steps are the same on Windows.
 
 The screenshots are from the real desktop application in a separate example workspace. The desk illustration is an **included style preview imported for documentation**, not the result of a generation performed for this guide. No paid requests were made. Screenshot prices are examples, not current price guarantees. Click any screenshot to view it at full size.
 
 ## 1. Install and choose English
 
-Download the Apple Silicon DMG from the [release page](https://github.com/YorkStack/FrameStudio/releases/tag/v0.3.0), open it and copy **FrameStudio** to **Applications**. This early release is not Apple-notarized; see the [installation notes](../README.md#download--herunterladen). Do not disable macOS security protections.
+Download FrameStudio from the [release page](https://github.com/YorkStack/FrameStudio/releases/latest). On macOS, open the DMG and copy **FrameStudio** to **Applications**. On Windows, run the `-setup.exe`. This early release is neither Apple-notarized nor Authenticode-signed; see the [installation notes](../README.md#install) for how to open it the first time. Do not disable system security protections.
 
 Open **Settings → Appearance**, set **Language** to **English**, then click **Save**. If the app starts in German, use **Einstellungen → Darstellung → Sprache → English → Speichern**. The language remains selected after restarting.
 
@@ -44,6 +46,8 @@ For a photo-based image, click **Import reference**, select a local image, then 
 ## 4. Review and generate
 
 Expand **Combined prompt** to check what will be sent. Review the estimate above **Generate 1 Image**. Set your limits under **Settings → Budgets & jobs** if needed, then click **Generate 1 Image** once.
+
+![Budgets & jobs settings with start limit, project limit and warning threshold](images/10-budgets.png)
 
 The job indicator shows queued or running work. Series progress counts completed images; it is not a fabricated percentage for a provider request. If a job fails, open its details and read the error before starting another paid attempt.
 

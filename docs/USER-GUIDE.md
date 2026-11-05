@@ -1,8 +1,10 @@
 # FrameStudio User Guide
 
+*Deutsch: [de/USER-GUIDE.md](de/USER-GUIDE.md)*
+
 FrameStudio is a local image workshop for presentations, documents and character assets. Projects, original images and job history stay in your workspace. Image generation uses an explicitly selected external provider and your own API key.
 
-This guide covers **version 0.3.0 for macOS**. Start with the illustrated [Quickstart](QUICKSTART.md) if you want to create one image first.
+This guide covers **version 0.3.0** for macOS and Windows. Screenshots and menu paths were captured on macOS; see [Windows notes](WINDOWS.md) for platform differences. Start with the illustrated [Quickstart](QUICKSTART.md) if you want to create one image first.
 
 ## Find your way around
 
@@ -29,7 +31,7 @@ The interface language does not translate your project titles, descriptions or h
 
 Under **Settings → API keys**, choose a provider and expand **Where do I get an API key?**. The help opens that provider's official key page. Gemini and OpenAI are image providers; Anthropic Claude is the optional text prompt assistant. A chat subscription is separate from API billing.
 
-**Persistent key:** select **Persist in OS credential store**, enter the key and click **Save key securely**. On macOS this uses Keychain. The app does not return stored secrets to the interface.
+**Persistent key:** select **Persist in OS credential store**, enter the key and click **Save key securely**. On macOS this uses Keychain, on Windows the Credential Manager. The app does not return stored secrets to the interface.
 
 **Session key:** select **This session only · do not save**, enter the key and click **Use for this session**. Wait for the active-session status. This key takes priority over a stored key for the same provider. Closing Settings keeps it active; fully quitting the app discards it. **Remove session key** removes the memory-only key without deleting the stored one.
 
@@ -39,7 +41,7 @@ Never put keys in project descriptions, prompts, screenshots, bug reports or sou
 
 ## Create and organize projects
 
-Click **New project** or press **Command+N**. Give it a recognizable name and a concise brief. The project can save a standard style, aspect ratio and output preferences. Open a project from **Projects** or its sidebar entry.
+Click **New project** or press **Command+N** (Windows: **Ctrl+N**). Give it a recognizable name and a concise brief. The project can save a standard style, aspect ratio and output preferences. Open a project from **Projects** or its sidebar entry.
 
 Use the top-right **Project actions** menu (three dots) for **Project defaults**, duplication, archiving and project backup. Archiving retains the project and its images. **Show archive** in the sidebar opens archived projects; open an archived project and use **Restore** in its actions menu to make it active again.
 
@@ -56,6 +58,8 @@ A project generator separates the reusable content from the instruction for one 
 | Individual instruction | Show the robot waving with its right hand, facing the viewer |
 
 Use the section buttons to jump to each area. **Save three sections to project** stores the reusable draft. Inspect **Combined prompt** before sending: the project brief, style, character definition, references and individual instruction are combined into one request. Each submitted job keeps its historical snapshot; editing a template later does not rewrite that job.
+
+![Generator with the scene section filled in, a saved character and the cost estimate](images/06-prompt-sections.png)
 
 Expert mode exposes model-specific settings and further prompt controls. Only use parameters offered for the chosen model. Aspect ratios, native resolution and output formats vary by provider/model. Export resizing is separate from native generation resolution.
 
@@ -79,9 +83,13 @@ Open **Style library** to browse editable templates. Included neutral previews a
 
 Use **Edit** to change a style or **Duplicate** to create your own version. **Create preview** opens a generation draft. Review provider and cost, generate, then choose **Use as style preview** for the result you want displayed in the library. Existing previews do not need to be regenerated just to use the style.
 
+![Style library with bundled previews, version labels and edit actions](images/07-style-library.png)
+
 ## Characters and series
 
 Create a character from **Characters** or **New character** in the generator. Record recognizable features, clothing and colors. Select reference images and explicitly approve them for generation when appropriate. Choose the intended generated character image for its display preview; the display image and generation references serve different purposes.
+
+![Character editor with features, clothing, colors and approved reference images](images/08-character.png)
 
 Use **Plan character set** to prepare views, poses, expressions and mouth shapes. Review the actual list and total count before starting; avoid accidentally generating every possible combination. Models can vary a character's identity between images even when the same references are used.
 
@@ -90,6 +98,8 @@ Use **Plan character set** to prepare views, poses, expressions and mouth shapes
 Open **Series approvals**. Check the description, originating interface, access recipient, destination project, exact planned images and total estimated cost. Where compatible choices are available, select the configured provider/model and review the recalculated estimate. Selecting a provider uses its active session key or stored key; it does not expose the key value.
 
 If the series exceeds the normal per-request start limit, the dialog may offer an explicit one-time limit for that series. The project budget still applies. Approve the whole series once: each listed image becomes a persistent job and is processed with the configured concurrency. A later series or a changed plan needs its own approval.
+
+![Series approval showing origin, image count and a model comparison with estimates](images/09-series-approval.png)
 
 For session keys, the same running app must process the work. After restarting, activate the key again; do not blindly create a duplicate series. Inspect the existing jobs first.
 
@@ -105,6 +115,10 @@ The job area shows queued, running and completed work, errors and available canc
 | Unknown | A reliable actual amount is unavailable; it is not zero |
 
 Set warnings, start limits, project budgets and concurrency under **Settings → Budgets & jobs**. View dated prices and request supported price updates under **Pricing & providers**. Historical jobs keep their price basis. Local limits do not cap charges made by other apps or enforce a global provider billing limit.
+
+![Budgets & jobs settings with start limit, project limit, warning threshold and concurrency](images/10-budgets.png)
+
+![Pricing & providers with dated prices per model and resolution](images/14-pricing.png)
 
 USD estimates are not a tax-inclusive EUR invoice. Provider billing may include currency conversion, taxes, other requests and reporting delay. Compare the same provider, time window and usage before comparing amounts.
 
@@ -146,6 +160,8 @@ Use **Import project ZIP** to restore a package as another project. Restoration 
 
 In **Settings → Storage & export**, choose an empty directory or an existing FrameStudio workspace. Apply the dedicated workspace-change action and restart. This changes the active data location; it does not move or delete the previous workspace. Export/import project ZIPs to transfer projects between workspaces. The export directory is a separate preference.
 
+![Storage & export settings with data directory, export directory and naming pattern](images/12-storage.png)
+
 ## REST and MCP access
 
 These interfaces are optional and disabled by default. Open **Settings → REST, MCP & access** to enable the interface you need. REST is local loopback; MCP uses stdio. Both share the GUI's projects, budgets and job rules.
@@ -153,6 +169,8 @@ These interfaces are optional and disabled by default. Open **Settings → REST,
 Create a separate access token for each program or person. Record its recipient and purpose. Copy the token when first shown and store it in the client securely; it cannot later be displayed again. Provider keys and local access tokens are different credentials.
 
 The compact list shows active entries by default. Expand an entry for details and use its revoke action to invalidate that token. The revoked view is history: a token marked **Revoked** is already invalid and cannot be revoked a second time. Revoking a client token does not cancel a previously approved generation job; manage jobs separately.
+
+![REST, MCP & access with two active access grants and the revoked history tab](images/11-access-tokens.png)
 
 For commands, scopes, headless operation and client examples, see [API and MCP setup](API.md) and [operation contracts](CONTRACT.md). A hosted model cannot directly reach your Mac's localhost or stdio; a local client must bridge that connection.
 
@@ -169,8 +187,8 @@ For commands, scopes, headless operation and client examples, see [API and MCP s
 | Project missing after folder change | The new workspace is separate; switch back or import a project ZIP |
 | Unexpected German text in English mode | Project/style prompt content and some assembled-prompt labels are data retained by version 0.3.0; edit them independently if needed |
 
-For a bug report, include the app version, macOS version, steps and error code. Exclude keys, access tokens and private prompts/photos. **Settings → About FrameStudio & SBOM → Export SBOM as JSON** provides the dependency inventory; it is not a vulnerability verdict.
+For a bug report, include the app version, operating system and version, steps and error code. Exclude keys, access tokens and private prompts/photos. **Settings → About FrameStudio & SBOM → Export SBOM as JSON** provides the dependency inventory; it is not a vulnerability verdict.
 
 ## Scope of this release
 
-The published binary targets Apple Silicon macOS and is not Apple Developer ID signed or notarized. This release produces images and character assets, not video, audio or automatic lip sync. Included screenshots use a separate example project and bundled sample artwork; they do not expose personal projects or perform paid generations.
+The published binaries target Apple Silicon macOS and Windows x64. The macOS app is not Apple Developer ID signed or notarized, and the Windows installer has no Authenticode signature. This release produces images and character assets, not video, audio or automatic lip sync. Included screenshots use a separate example project and bundled sample artwork; they do not expose personal projects or perform paid generations.

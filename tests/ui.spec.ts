@@ -1352,6 +1352,8 @@ test("Workshop v020: import a character reference and choose generated portrait 
  await d.getByLabel('Charakterbild für die Bibliothek',{exact:true}).selectOption(assets[0].id);
  await page.screenshot({path:path.join(proof,'49-character-reference-portrait.png')});
  await d.getByRole('button',{name:'Speichern',exact:true}).click();
+ // Saving is asynchronous; wait until the core has stored the character before reading it.
+ await expect.poll(async()=>(await call('character.list',{project_id:p.id},store)).length).toBe(1);
  const c=(await call('character.list',{project_id:p.id},store))[0];expect(c.reference_ids).toHaveLength(1);expect(c.reference_ids[0]).not.toBe(c.portrait_asset_id);expect(c.portrait_asset_id).toBe(assets[0].id);
  await expect(page.getByRole('img',{name:'Pilot',exact:true})).toBeVisible();
  const expected=await call('asset.read',{id:assets[0].id,thumbnail:true},store);

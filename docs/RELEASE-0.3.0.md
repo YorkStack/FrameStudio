@@ -1,5 +1,7 @@
 # Version 0.3.0 — validation
 
+*This validation report is available in English only.*
+
 Validated on 2026-10-31, macOS 27.2, Apple M2 Pro, 16 GiB RAM.
 
 | Area | Implemented / executed | Result |
