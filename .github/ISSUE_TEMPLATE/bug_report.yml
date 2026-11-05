@@ -1,0 +1,64 @@
+name: Bug report
+description: Something does not work as described in the documentation.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste API keys, access tokens, private prompts or personal photos.** Security problems belong in a private report (Security tab → Report a vulnerability), not here.
+        Deutsch ist ebenfalls willkommen.
+  - type: input
+    id: version
+    attributes:
+      label: FrameStudio version
+      description: Settings → About FrameStudio & SBOM
+      placeholder: "0.3.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - Windows x64
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: "macOS 27.2 / Windows 11 24H2"
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider involved
+      options:
+        - None / not provider-related
+        - Google Gemini
+        - OpenAI
+        - Anthropic (prompt assistant)
+        - Test provider
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message or code
+      description: Copy the error shown in the job details or next to the key field. Remove anything that looks like a key or token.
+      render: text
